@@ -10,6 +10,7 @@ defmodule Neo4Ex.MixProject do
       version: @version,
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
+      elixirc_paths: elixirc_paths(Mix.env()),
       description: description(),
       package: package(),
       deps: deps(),
@@ -20,15 +21,20 @@ defmodule Neo4Ex.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger],
-      mod: {Neo4Ex.Application, []}
+      extra_applications: [:logger]
     ]
   end
+
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
 
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
       {:db_connection, "~> 2.4"},
+
+      # Tests
+      {:mox, "~> 1.0", only: [:test]},
 
       # Linting
       {:credo, "~> 1.6.7", only: [:dev]},

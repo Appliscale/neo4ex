@@ -1,5 +1,5 @@
 defmodule Neo4Ex.BoltProtocol.EncoderTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   alias Neo4Ex.BoltProtocol.Structure.Graph.Relationship
   alias Neo4Ex.BoltProtocol.Structure.Graph.Node

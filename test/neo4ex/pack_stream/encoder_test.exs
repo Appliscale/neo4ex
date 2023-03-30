@@ -1,5 +1,5 @@
 defmodule Neo4Ex.PackStream.EncoderTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   alias Neo4Ex.PackStream.Encoder
 

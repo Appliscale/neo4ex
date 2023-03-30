@@ -22,6 +22,39 @@ def deps do
 end
 ```
 
+## Usage
+
+1. Define connection params in config
+
+    ```elixir
+    config :neo4ex, Neo4Ex.Connector,
+      hostname: "localhost", # required
+      port: 7687, # default
+      principal: "neo4j", # optional
+      credentials: "neo4j", # optional
+    ```
+
+2. Add `Neo4Ex.Connector` to your `application.ex`
+
+    ```elixir
+    children = [
+      # Starts the database connection pool
+      Neo4Ex.Connector
+    ]
+    ```
+
+3. Query database using `Neo4Ex.run/1` and `Neo4Ex.Cypher.Query`
+
+    ```elixir
+    Neo4Ex.run(
+      %Neo4Ex.Cypher.Query{query: "MATCH (n) RETURN n"}
+    )
+    ```
+
+    Keep in mind that Neo4j streams results, so the `run/1` function returns a `Stream` that has to be consumed.
+
+Ecto-like Cypher DSL is one of the things that are on the Roadmap
+
 ## Roadmap
 
 - [ ] Implement Database driver using latest Bolt Protocol (v4+)  
