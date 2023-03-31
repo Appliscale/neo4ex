@@ -12,6 +12,7 @@ defmodule Neo4Ex.BoltProtocol do
   alias Neo4Ex.Connector.Socket
 
   alias Neo4Ex.BoltProtocol.Structure.Message.Extra
+  alias Neo4Ex.BoltProtocol.Structure.Message.Detail.Record
 
   alias Neo4Ex.BoltProtocol.Structure.Message.Request.{
     Hello,
@@ -110,8 +111,8 @@ defmodule Neo4Ex.BoltProtocol do
   end
 
   @impl true
-  def handle_close(_, _, state) do
-    {:ok, :ok, state}
+  def handle_close(query, _opts, state) do
+    {:ok, query, state}
   end
 
   @impl true
@@ -120,11 +121,35 @@ defmodule Neo4Ex.BoltProtocol do
   end
 
   @impl true
-  def handle_execute(
+  def handle_execute(query, params, opts, %Socket{} = socket) do
+    case handle_declare(query, params, opts, socket) do
+      {:ok, q, cursor, sckt} ->
+        result =
+          Stream.cycle([0])
+          |> Stream.transform(q, fn _, q ->
+            case handle_fetch(q, cursor, opts, sckt) do
+              {:cont, data, _} -> {[data], q}
+              {:halt, _, _} -> {:halt, q}
+              {:error, exception, _} -> raise exception
+            end
+          end)
+          |> Enum.to_list()
+
+        {:ok, q, result, sckt}
+
+      other ->
+        other
+    end
+  rescue
+    ex -> {:error, ex, socket}
+  end
+
+  @impl true
+  def handle_declare(
         %Cypher.Query{query: cypher_query, params: params, opts: opts} = query,
-        _,
-        _,
-        %Socket{} = socket
+        _params,
+        _opts,
+        socket
       ) do
     message = %Run{
       query: cypher_query,
@@ -134,18 +159,35 @@ defmodule Neo4Ex.BoltProtocol do
 
     with(
       :ok <- Connector.send(message, socket),
-      {:ok, %Success{metadata: %{"t_first" => t_first}}} <- Connector.read(socket)
+      {:ok, %Success{metadata: %{"t_first" => t_first} = success}} <- Connector.read(socket)
     ) do
-      result_stream =
-        t_first
-        |> Stream.timer()
-        |> Stream.flat_map(fn _ -> Connector.read_stream(socket) end)
-
-      {:ok, query, result_stream, socket}
+      # we should block current process for the t_first milliseconds as this is "preparation time" for the DB
+      Process.sleep(t_first)
+      {:ok, query, success, socket}
     else
       {:ok, %Failure{} = failure} -> {:error, failure, socket}
       {:error, error} -> {:disconnect, error, socket}
     end
+  end
+
+  @impl true
+  def handle_fetch(_query, _cursor, _opts, socket) do
+    case Connector.read(socket) do
+      {:ok, %Record{data: data}} -> {:cont, data, socket}
+      {:ok, %Success{}} -> {:halt, nil, socket}
+      {:error, exception} -> {:error, exception, socket}
+    end
+  end
+
+  @impl true
+  def handle_deallocate(query, _cursor, _opts, state) do
+    {:ok, query, state}
+  end
+
+  @impl true
+  def handle_status(_opts, state) do
+    # there is no documented way of reading connection state, although it could be useful if possible
+    {:idle, state}
   end
 
   defp handshake(sock, opts) do

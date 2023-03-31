@@ -1,7 +1,7 @@
 defmodule Neo4Ex.Cypher.Query do
   alias Neo4Ex.Cypher.Query
 
-  defstruct [:query, :params, opts: []]
+  defstruct query: "", params: %{}, opts: []
 
   defimpl DBConnection.Query do
     def parse(%Query{params: %{}} = query, _opts), do: query

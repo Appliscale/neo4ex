@@ -3,12 +3,15 @@ defmodule Neo4Ex.PackStream.DecoderTest do
 
   alias Neo4Ex.PackStream.Decoder
 
-  describe "read_chunk/1" do
-    test "decodes basic structures" do
+  describe "decode/1" do
+    test "decodes basic types" do
       assert {nil, ""} == Decoder.decode(<<0xC0>>)
       assert {false, ""} == Decoder.decode(<<0xC2>>)
+      assert {true, ""} == Decoder.decode(<<0xC3>>)
       assert {[], ""} == Decoder.decode(<<0x90>>)
       assert {123, ""} == Decoder.decode(<<0x7B>>)
+      assert {32_767, ""} == Decoder.decode(<<0xC9, 32_767::16>>)
+      assert {<<1, 2, 3, 4>>, ""} == Decoder.decode(<<0xCC, 4, 1, 2, 3, 4>>)
       assert {2.0, ""} == Decoder.decode(<<0xC1, 0x40, 0x0::56>>)
 
       # Lists and maps work a bit different

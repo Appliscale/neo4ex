@@ -10,10 +10,6 @@ defmodule Neo4Ex.Connector do
 
   alias Neo4Ex.BoltProtocol
   alias Neo4Ex.BoltProtocol.{Encoder, Decoder}
-  alias Neo4Ex.BoltProtocol.Structure.Message.Extra
-  alias Neo4Ex.BoltProtocol.Structure.Message.Request.Pull
-  alias Neo4Ex.BoltProtocol.Structure.Message.Detail.Record
-  alias Neo4Ex.BoltProtocol.Structure.Message.Summary.Success
 
   # Chunk headers are 16-bit unsigned integers
   @chunk_size 16
@@ -23,7 +19,7 @@ defmodule Neo4Ex.Connector do
   def send_noop(%Socket{sock: sock}), do: Socket.send(sock, <<0::@chunk_size>>)
 
   def send(message, %Socket{sock: sock, bolt_version: bolt_version}) do
-    chunk_bytes = Integer.pow(2, @chunk_size)
+    max_chunk_size = Integer.pow(2, @chunk_size)
 
     message
     |> Encoder.encode(bolt_version)
@@ -32,8 +28,8 @@ defmodule Neo4Ex.Connector do
         nil
 
       # full chunk
-      <<data::binary-size(chunk_bytes), rest::binary>> ->
-        {send_chunk(data, chunk_bytes, sock), rest}
+      <<data::binary-size(max_chunk_size), rest::binary>> ->
+        {send_chunk(data, max_chunk_size, sock), rest}
 
       # small chunk
       <<rest::binary>> ->
@@ -47,21 +43,8 @@ defmodule Neo4Ex.Connector do
 
   def read(%Socket{} = socket) do
     {:ok, read_chunk([], socket)}
-  catch
+  rescue
     error -> {:error, error}
-  end
-
-  def read_stream(%Socket{} = socket) do
-    Stream.resource(
-      fn -> send(%Pull{extra: %Extra.Pull{n: -1}}, socket) end,
-      fn :ok ->
-        case read(socket) do
-          {:ok, %Record{data: data}} -> {data, :ok}
-          {:ok, %Success{}} -> {:halt, :ok}
-        end
-      end,
-      fn _ -> :ok end
-    )
   end
 
   def start_link(opts) do

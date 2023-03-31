@@ -14,7 +14,17 @@ defmodule Neo4Ex.MixProject do
       description: description(),
       package: package(),
       deps: deps(),
-      docs: docs()
+      docs: docs(),
+      test_coverage: [
+        ignore_modules: [
+          Neo4Ex.BoltProtocol.Structure,
+          Neo4Ex.PackStream.DecoderBuilder,
+          Neo4Ex.PackStream.Exceptions.MarkersError
+        ],
+        summary: [
+          threshold: 80
+        ]
+      ]
     ]
   end
 
