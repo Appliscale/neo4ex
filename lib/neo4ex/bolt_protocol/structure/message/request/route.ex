@@ -9,4 +9,9 @@ defmodule Neo4Ex.BoltProtocol.Structure.Message.Request.Route do
     field(:db, default: "", version: "< 4.4.0")
     field(:extra, default: %Extra.Route{}, version: ">= 4.4.0")
   end
+
+  def get_tag(bolt_version) do
+    # "Route" message exists since version 4.3
+    if Version.match?(bolt_version, "< 4.3.0"), do: nil, else: @tag
+  end
 end

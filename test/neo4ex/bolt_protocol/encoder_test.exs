@@ -41,6 +41,7 @@ defmodule Neo4Ex.BoltProtocol.EncoderTest do
 
     test "handles encoding of legacy structures" do
       assert <<0xB3, 0x66, 0, 0, 0x80>> == Encoder.encode(%DateTimeZoneId{}, "4.0.0")
+      assert_raise(Exceptions.EncodeError, fn -> Encoder.encode(%Route{}, "4.0.0") end)
       assert <<0xB3, 0x66, 0xA0, 0x90, 0x80>> == Encoder.encode(%Route{}, "4.3.0")
       assert_raise(Exceptions.EncodeError, fn -> Encoder.encode(%DateTimeZoneId{}, "4.3.0") end)
     end

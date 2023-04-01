@@ -13,10 +13,11 @@ defmodule Neo4Ex.Connector do
 
   # Chunk headers are 16-bit unsigned integers
   @chunk_size 16
+  @noop <<0::size(@chunk_size)>>
   @supported_versions [4.3, 4.2, 4.1, 4.0]
   @connector_opts Application.compile_env(:neo4ex, Neo4Ex.Connector, [])
 
-  def send_noop(%Socket{sock: sock}), do: Socket.send(sock, <<0::@chunk_size>>)
+  def send_noop(%Socket{sock: sock}), do: Socket.send(sock, @noop)
 
   def send(message, %Socket{sock: sock, bolt_version: bolt_version}) do
     max_chunk_size = Integer.pow(2, @chunk_size)
@@ -67,7 +68,7 @@ defmodule Neo4Ex.Connector do
   end
 
   defp send_chunk(data, data_size, sock) do
-    chunk = <<data_size::@chunk_size, data::binary, 0::@chunk_size>>
+    chunk = <<data_size::@chunk_size, data::binary, @noop>>
     Socket.send(sock, chunk)
   end
 
@@ -77,11 +78,11 @@ defmodule Neo4Ex.Connector do
        ) do
     with(
       {:ok, <<chunk_size::@chunk_size>>} when chunk_size > 0 <- Socket.recv(sock, 2),
-      {:ok, data} <- Socket.recv(sock, chunk_size)
+      {:ok, data} when data != @noop <- Socket.recv(sock, chunk_size)
     ) do
       read_chunk([data | data_parts], socket)
     else
-      {:ok, <<0::@chunk_size>>} ->
+      {:ok, @noop} ->
         data_parts
         |> Enum.reverse()
         |> IO.iodata_to_binary()
