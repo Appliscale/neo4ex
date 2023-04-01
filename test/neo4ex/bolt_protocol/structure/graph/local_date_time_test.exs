@@ -6,9 +6,13 @@ defmodule Neo4Ex.BoltProtocol.Structure.Graph.LocalDateTimeTest do
 
   describe "load/2" do
     test "returns NaiveDateTime with proper value" do
+      {loaded, truncated} = LocalDateTime.load([100, 2123], nil)
+
+      assert truncated == 123
+
       assert NaiveDateTime.compare(
                ~N[1970-01-01 00:01:40.000002Z],
-               LocalDateTime.load([100, 2000], nil)
+               loaded
              ) == :eq
     end
   end

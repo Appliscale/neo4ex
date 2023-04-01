@@ -2,8 +2,7 @@ defmodule Neo4Ex.BoltProtocol.Structure.Graph.DateTime do
   use Neo4Ex.BoltProtocol.Structure
 
   # Elixir supports 6-digit precission for time, this means we can use microsecodns but not nanoseconds
-  # this library aims for simplicity, so we just hide that detail and round to full microseconds
-  # TODO: consider config option whether to keep lossless struct or map to lossy DateTime
+  # this library aims for simplicity, so we return "lost" nanoseconds as separate value
   structure 0x49 do
     field(:seconds, default: 0)
     field(:nanoseconds, default: 0)
@@ -11,12 +10,14 @@ defmodule Neo4Ex.BoltProtocol.Structure.Graph.DateTime do
   end
 
   def load([seconds, nanoseconds, tz_offset_seconds], _) do
+    ns = rem(nanoseconds, 1000)
+
     dt =
       ~U[1970-01-01 00:00:00Z]
       |> DateTime.add(seconds + tz_offset_seconds, :second)
       |> DateTime.add(nanoseconds, :nanosecond)
 
-    %{dt | utc_offset: tz_offset_seconds}
+    {%{dt | utc_offset: tz_offset_seconds}, ns}
   end
 end
 

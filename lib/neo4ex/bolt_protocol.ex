@@ -7,6 +7,7 @@ defmodule Neo4Ex.BoltProtocol do
 
   require Logger
 
+  alias Neo4Ex.BoltProtocol.Structure.Message.Request.Discard
   alias Neo4Ex.Cypher
   alias Neo4Ex.Connector
   alias Neo4Ex.Connector.Socket
@@ -21,6 +22,7 @@ defmodule Neo4Ex.BoltProtocol do
     Commit,
     Rollback,
     Run,
+    Pull,
     Goodbye
   }
 
@@ -46,11 +48,8 @@ defmodule Neo4Ex.BoltProtocol do
 
   @impl true
   def disconnect(_exception, %Socket{sock: sock} = socket) do
-    with(
-      :ok <- Connector.send(%Goodbye{}, socket),
-      :ok <- Socket.close(sock)
-    ) do
-      :ok
+    with(:ok <- Connector.send(%Goodbye{}, socket)) do
+      Socket.close(sock)
     end
   end
 
@@ -126,13 +125,7 @@ defmodule Neo4Ex.BoltProtocol do
       {:ok, q, cursor, sckt} ->
         result =
           Stream.cycle([0])
-          |> Stream.transform(q, fn _, q ->
-            case handle_fetch(q, cursor, opts, sckt) do
-              {:cont, data, _} -> {[data], q}
-              {:halt, _, _} -> {:halt, q}
-              {:error, exception, _} -> raise exception
-            end
-          end)
+          |> Stream.transform(q, stream_transform(cursor, opts, sckt))
           |> Enum.to_list()
 
         {:ok, q, result, sckt}
@@ -159,10 +152,13 @@ defmodule Neo4Ex.BoltProtocol do
 
     with(
       :ok <- Connector.send(message, socket),
-      {:ok, %Success{metadata: %{"t_first" => t_first} = success}} <- Connector.read(socket)
-    ) do
+      {:ok, %Success{metadata: %{"t_first" => t_first} = success}} <- Connector.read(socket),
       # we should block current process for the t_first milliseconds as this is "preparation time" for the DB
-      Process.sleep(t_first)
+      :ok <- Process.sleep(t_first),
+      # initialize data stream
+      pull_message <- %Pull{extra: %Extra.Pull{n: -1}},
+      :ok <- Connector.send(pull_message, socket)
+    ) do
       {:ok, query, success, socket}
     else
       {:ok, %Failure{} = failure} -> {:error, failure, socket}
@@ -180,8 +176,19 @@ defmodule Neo4Ex.BoltProtocol do
   end
 
   @impl true
-  def handle_deallocate(query, _cursor, _opts, state) do
-    {:ok, query, state}
+  def handle_deallocate(_query, _cursor, _opts, socket) do
+    # make sure we discard any unconsumed data
+    message = %Discard{extra: %Extra.Pull{n: -1}}
+
+    with(
+      :ok <- Connector.send(message, socket),
+      {:ok, %Success{} = result} <- Connector.read(socket)
+    ) do
+      {:ok, result, socket}
+    else
+      {:ok, %Failure{} = failure} -> {:error, failure, socket}
+      {:error, error} -> {:disconnect, error, socket}
+    end
   end
 
   @impl true
@@ -269,6 +276,16 @@ defmodule Neo4Ex.BoltProtocol do
         :ok
       else
         other -> other
+      end
+    end
+  end
+
+  defp stream_transform(cursor, opts, sckt) do
+    fn _, q ->
+      case handle_fetch(q, cursor, opts, sckt) do
+        {:cont, data, _} -> {[data], q}
+        {:halt, _, _} -> {:halt, q}
+        {:error, exception, _} -> raise exception
       end
     end
   end

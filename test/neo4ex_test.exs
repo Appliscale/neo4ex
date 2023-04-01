@@ -41,7 +41,9 @@ defmodule Neo4ExTest do
       encoded_success_message = Encoder.encode(success_message, "0.0.0")
 
       SocketMock
-      # pull
+      # query
+      |> expect(:send, fn _, _ -> :ok end)
+      # pull results
       |> expect(:send, fn _, _ -> :ok end)
       # summary message
       |> expect_message(encoded_success_message)
@@ -67,14 +69,19 @@ defmodule Neo4ExTest do
       # begin transaction
       |> expect(:send, fn _, _ -> :ok end)
       |> expect_message(encoded_success_message)
-      # pull
+      # query
+      |> expect(:send, fn _, _ -> :ok end)
+      # pull results
       |> expect(:send, fn _, _ -> :ok end)
       # summary message
       |> expect_message(encoded_success_message)
-      # detail message
+      # detail messages
       |> expect_message(encoded_message)
       |> expect_message(encoded_message)
-      # summary message
+      # no summary here because we're not consuming whole stream
+      # discard message
+      |> expect(:send, fn _, _ -> :ok end)
+      # discard success message
       |> expect_message(encoded_success_message)
       # commit transaction
       |> expect(:send, fn _, _ -> :ok end)
@@ -82,8 +89,11 @@ defmodule Neo4ExTest do
 
       q = %Query{}
 
-      assert ["hello", "goodbye", "hello", "goodbye"] ==
-               Neo4Ex.stream(q, fn x, acc -> acc ++ x end)
+      assert ["hello", "hello", "goodbye"] ==
+               Neo4Ex.stream(q, fn x, acc ->
+                 # this will stop stream in the middle
+                 if acc == x, do: {:halt, [hd(x) | acc]}, else: {:cont, acc ++ x}
+               end)
     end
   end
 

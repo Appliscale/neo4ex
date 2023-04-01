@@ -6,8 +6,9 @@ defmodule Neo4Ex.BoltProtocol.Structure.Graph.DateTimeTest do
 
   describe "load/2" do
     test "returns DateTime with proper value" do
-      loaded = GraphDateTime.load([100, 2000, 3600], nil)
+      {loaded, truncated} = GraphDateTime.load([100, 2123, 3600], nil)
 
+      assert truncated == 123
       assert loaded.utc_offset == 3600
 
       assert DateTime.compare(

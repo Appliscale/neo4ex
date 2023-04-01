@@ -6,9 +6,13 @@ defmodule Neo4Ex.BoltProtocol.Structure.Graph.LocalTimeTest do
 
   describe "load/2" do
     test "returns Time with proper value" do
+      {loaded, truncated} = LocalTime.load([100_000_002_123], nil)
+
+      assert truncated == 123
+
       assert Time.compare(
                ~T[00:01:40.000002],
-               LocalTime.load([100_000_002_000], nil)
+               loaded
              ) == :eq
     end
   end

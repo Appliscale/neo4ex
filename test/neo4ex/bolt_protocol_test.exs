@@ -26,7 +26,9 @@ defmodule Neo4Ex.BoltProtocolTest do
       encoded_success_message = Encoder.encode(success_message, "0.0.0")
 
       SocketMock
-      # pull
+      # query
+      |> expect(:send, fn _, _ -> :ok end)
+      # pull results
       |> expect(:send, fn _, _ -> :ok end)
       # summary message
       |> expect(:recv, fn _, 2 -> {:ok, <<5::16>>} end)
@@ -52,7 +54,9 @@ defmodule Neo4Ex.BoltProtocolTest do
       encoded_success_message = Encoder.encode(success_message, "0.0.0")
 
       SocketMock
-      # pull
+      # query
+      |> expect(:send, fn _, _ -> :ok end)
+      # pull results
       |> expect(:send, fn _, _ -> :ok end)
       # summary message
       |> expect(:recv, fn _, 2 -> {:ok, <<5::16>>} end)
@@ -77,7 +81,9 @@ defmodule Neo4Ex.BoltProtocolTest do
       encoded_success_message = Encoder.encode(success_message, "0.0.0")
 
       SocketMock
-      # pull
+      # query
+      |> expect(:send, fn _, _ -> :ok end)
+      # pull results
       |> expect(:send, fn _, _ -> :ok end)
       # summary message
       |> expect(:recv, fn _, 2 -> {:ok, <<5::16>>} end)

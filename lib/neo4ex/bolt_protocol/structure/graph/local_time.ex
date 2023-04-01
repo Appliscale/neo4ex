@@ -1,13 +1,18 @@
 defmodule Neo4Ex.BoltProtocol.Structure.Graph.LocalTime do
   use Neo4Ex.BoltProtocol.Structure
 
-  # field order is important! its enforced by PackStream
+  # Elixir supports 6-digit precission for time, this means we can use microsecodns but not nanoseconds
+  # this library aims for simplicity, so we return "lost" nanoseconds as separate value
   structure 0x74 do
     field(:nanoseconds, default: 0)
   end
 
   def load([nanoseconds], _) do
-    Time.add(~T[00:00:00], nanoseconds, :nanosecond)
+    ns = rem(nanoseconds, 1000)
+
+    time = Time.add(~T[00:00:00], nanoseconds, :nanosecond)
+
+    {time, ns}
   end
 end
 
