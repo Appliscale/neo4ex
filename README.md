@@ -57,7 +57,7 @@ Ecto-like Cypher DSL is one of the things that are on the Roadmap
 
 ## Roadmap
 
-- [ ] Implement Database driver using latest Bolt Protocol (v4+)  
+- [x] Implement Database driver using latest Bolt Protocol (v4+)  
 - [ ] Add support for Neo4j Routing & Clustering  
 - [ ] Build simple DSL for Cypher query language  
 - [ ] Add support for mapping Nodes & Relationships to any struct
