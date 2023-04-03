@@ -6,7 +6,6 @@ defmodule Neo4Ex.PackStream.Decoder do
   import Neo4Ex.PackStream.DecoderBuilder
 
   alias Neo4Ex.Utils
-  alias Neo4Ex.PackStream.Markers
 
   @spec decode(binary()) :: {term(), binary()}
   def decode(data), do: do_decode(data)
@@ -22,33 +21,33 @@ defmodule Neo4Ex.PackStream.Decoder do
   end
 
   register_decoder(Integer, marker, data) do
-    marker_index = Integer |> Markers.get!() |> Enum.find_index(&(&1 == marker))
-    num_size = Integer.pow(2, marker_index) * 8
+    num_size = Utils.bit_size_for_term_size(marker, Integer)
     <<num::size(num_size), rest::binary>> = data
     {num, rest}
   end
 
   register_decoder(String, marker, data) do
-    marker_size = Utils.bit_size_for_integer(marker)
+    marker_size = Utils.bit_size_for_term_size(marker, String)
     <<str_length::size(marker_size), str::binary-size(str_length), rest::binary>> = data
     {str, rest}
   end
 
   register_decoder(BitString, marker, data) do
-    <<bytes_length, bytes::binary-size(bytes_length), rest::binary>> = data
+    marker_size = Utils.bit_size_for_term_size(marker, BitString)
+    <<bytes_length::size(marker_size), bytes::binary-size(bytes_length), rest::binary>> = data
     {bytes, rest}
   end
 
   # PackStream only informs that the List/Map starts
   # it can't decode its items since those can be ANY type (some of them may need Bolt version information to be decoded)
   register_decoder(List, marker, data) do
-    marker_size = Utils.bit_size_for_integer(marker)
+    marker_size = Utils.bit_size_for_term_size(marker, List)
     <<list_length::size(marker_size), rest::binary>> = data
     {List.duplicate(nil, list_length), rest}
   end
 
   register_decoder(Map, marker, data) do
-    marker_size = Utils.bit_size_for_integer(marker)
+    marker_size = Utils.bit_size_for_term_size(marker, Map)
     <<map_size::size(marker_size), rest::binary>> = data
     # that's not pretty but compact
     {%{size: map_size}, rest}

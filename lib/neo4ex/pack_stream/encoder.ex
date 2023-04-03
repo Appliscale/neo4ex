@@ -55,13 +55,14 @@ end
 
 defimpl Neo4Ex.PackStream.Encoder, for: BitString do
   alias Neo4Ex.Utils
-  alias Neo4Ex.PackStream.Markers
 
   def encode(term) do
     markers_type = if is_binary(term) and String.printable?(term), do: String, else: BitString
-    markers = Markers.get!(markers_type)
-    term_size = byte_size(term)
-    Utils.enumerable_header(term_size, markers) <> term
+
+    term
+    |> byte_size()
+    |> Utils.enumerable_header(markers_type)
+    |> Kernel.<>(term)
   end
 end
 
@@ -80,26 +81,25 @@ end
 
 defimpl Neo4Ex.PackStream.Encoder, for: List do
   alias Neo4Ex.Utils
-  alias Neo4Ex.PackStream.Markers
 
   # PackStream only informs that the List starts
   # it can't encode its items since those can be ANY type (some of them may need Bolt version information to be encoded)
   def encode(term) do
-    markers = Markers.get!(@for)
-    term_size = length(term)
-    Utils.enumerable_header(term_size, markers)
+    term
+    |> length()
+    |> Utils.enumerable_header(@for)
   end
 end
 
 defimpl Neo4Ex.PackStream.Encoder, for: Map do
   alias Neo4Ex.Utils
-  alias Neo4Ex.PackStream.Markers
 
   # PackStream only informs that the Map starts
   # it can't encode its items since those can be ANY type (some of them may need Bolt version information to be encoded)
   def encode(term) do
-    markers = Markers.get!(@for)
-    term_size = term |> Map.keys() |> length()
-    Utils.enumerable_header(term_size, markers)
+    term
+    |> Map.keys()
+    |> length()
+    |> Utils.enumerable_header(@for)
   end
 end

@@ -1,20 +1,21 @@
 defmodule Neo4Ex.Utils do
   @moduledoc false
 
-  alias Neo4Ex.PackStream
   alias Neo4Ex.BoltProtocol
 
+  alias Neo4Ex.PackStream
+  alias Neo4Ex.PackStream.Markers
+
   # binaries and lists share similar logic
-  def enumerable_header(term_size, markers) do
+  def enumerable_header(term_size, markers_type) do
     byte_count = byte_size_for_integer(term_size, false)
     marker_index = if byte_count < 1, do: 0, else: ceil(byte_count)
-    marker = Enum.at(markers, marker_index)
-    marker_size = byte_size_for_integer(marker, false)
+    marker = markers_type |> Markers.get!() |> Enum.at(marker_index)
 
     # marker could be nibble or octet
-    marker_bits = round(marker_size * 8)
+    marker_bits = bit_size_for_integer(marker)
     # term_size can be from a nibble (if marker is a nibble) up to 4 bytes
-    term_bits = if marker_bits == 4, do: 4, else: byte_count |> ceil() |> Kernel.*(8)
+    term_bits = bit_size_for_term_size(marker, markers_type)
 
     <<marker::size(marker_bits), term_size::size(term_bits)>>
   end
@@ -31,6 +32,18 @@ defmodule Neo4Ex.Utils do
 
   def bit_size_for_integer(number) do
     number |> Integer.digits(16) |> length() |> Kernel.*(4)
+  end
+
+  def bit_size_for_term_size(marker, markers_type) do
+    # if consecutive markers repeat it means that the values encoded should fall into the bigger limit
+    # this happens for BitStrings which have the same marker up to 255 bytes of data
+    # while other types tend to have one more marker for small data up to 16 bytes
+    [first_marker | _] = markers = markers_type |> Markers.get!() |> Enum.dedup()
+    marker_index = Enum.find_index(markers, &(&1 == marker))
+    first_marker_size = bit_size_for_integer(first_marker)
+    # sometimes first marker is 4 bits, so we count 4,8,16,32
+    # otherwise marker sizes are limited to 8,16,32
+    Integer.pow(2, marker_index) * first_marker_size
   end
 
   def choose_encoder(term) do

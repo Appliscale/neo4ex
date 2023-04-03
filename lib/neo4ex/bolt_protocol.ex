@@ -201,7 +201,8 @@ defmodule Neo4Ex.BoltProtocol do
     # we must always send 4 options for version negotiation
     supported_versions =
       opts
-      |> Keyword.get(:versions, [0, 0, 0, 0])
+      |> Keyword.get(:versions, [])
+      |> Enum.concat([0.0, 0.0, 0.0, 0.0])
       |> Enum.take(4)
       |> Enum.map(fn float ->
         [major, minor] =
