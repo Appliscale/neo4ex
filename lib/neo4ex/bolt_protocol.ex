@@ -61,8 +61,8 @@ defmodule Neo4Ex.BoltProtocol do
   @impl true
   def ping(%Socket{bolt_version: bolt_version} = state) do
     if Version.match?(bolt_version, ">= 4.1.0") do
-      # since version 4.1 there is keep alive behaviour
-      Connector.send_noop(state)
+      # fixme: this is breaking the connection, but the documentation says it can be used
+      # Connector.send_noop(state)
     end
 
     {:ok, state}
