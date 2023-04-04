@@ -72,38 +72,5 @@ defmodule Neo4Ex.BoltProtocolTest do
       assert {:error, DBConnection.ConnectionError.exception(inspect(:closed)), socket} ==
                BoltProtocol.handle_execute(query, %{}, [], socket)
     end
-
-    test "blocks if needed", %{socket: socket, query: query} do
-      t_first = 100
-      message = %Record{data: ["message"]}
-      encoded_message = Encoder.encode(message, "0.0.0")
-      success_message = %Success{metadata: %{"t_first" => t_first}}
-      encoded_success_message = Encoder.encode(success_message, "0.0.0")
-
-      SocketMock
-      # query
-      |> expect(:send, fn _, _ -> :ok end)
-      # pull results
-      |> expect(:send, fn _, _ -> :ok end)
-      # summary message
-      |> expect(:recv, fn _, 2 -> {:ok, <<5::16>>} end)
-      |> expect(:recv, fn _, _ -> {:ok, encoded_success_message} end)
-      |> expect(:recv, fn _, 2 -> {:ok, <<0::16>>} end)
-      # detail message
-      |> expect(:recv, fn _, 2 -> {:ok, <<5::16>>} end)
-      |> expect(:recv, fn _, _ -> {:ok, encoded_message} end)
-      |> expect(:recv, fn _, 2 -> {:ok, <<0::16>>} end)
-      # summary message
-      |> expect(:recv, fn _, 2 -> {:ok, <<5::16>>} end)
-      |> expect(:recv, fn _, _ -> {:ok, encoded_success_message} end)
-      |> expect(:recv, fn _, 2 -> {:ok, <<0::16>>} end)
-
-      {time, value} = :timer.tc(fn -> BoltProtocol.handle_execute(query, %{}, [], socket) end)
-      time = time / 1000
-
-      # make sure we waited only for the first result
-      assert time > t_first and time < 2 * t_first
-      assert {:ok, query, [["message"]], socket} == value
-    end
   end
 end

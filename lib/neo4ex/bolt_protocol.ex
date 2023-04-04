@@ -152,9 +152,7 @@ defmodule Neo4Ex.BoltProtocol do
 
     with(
       :ok <- Connector.send(message, socket),
-      {:ok, %Success{metadata: %{"t_first" => t_first} = success}} <- Connector.read(socket),
-      # we should block current process for the t_first milliseconds as this is "preparation time" for the DB
-      :ok <- Process.sleep(t_first),
+      {:ok, %Success{} = success} <- Connector.read(socket),
       # initialize data stream
       pull_message <- %Pull{extra: %Extra.Pull{n: -1}},
       :ok <- Connector.send(pull_message, socket)
