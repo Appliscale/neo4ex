@@ -24,11 +24,11 @@ defmodule Neo4ex.BoltProtocol.Structure do
     [struct, protocol]
   end
 
-  defmacro structure(tag, do: block) do
+  defmacro structure(tag, opts \\ [], do: block) do
     fields_list = build_fields_list(block)
     struct = structure(fields_list)
     protocol = encoder_protocol(fields_list)
-    helpers = behaviour(tag, fields_list)
+    helpers = behaviour(tag, fields_list, opts)
     doc = gen_doc(tag, fields_list)
 
     [doc, struct, protocol, helpers]
@@ -111,28 +111,43 @@ defmodule Neo4ex.BoltProtocol.Structure do
     end
   end
 
-  defp behaviour(tag, fields_list) do
+  defp behaviour(tag, fields_list, opts) do
+    requirement = opts |> Keyword.get(:version, ">= 0.0.0") |> Version.parse_requirement!()
+
+    loader_per_version =
+      requirement
+      |> Utils.list_valid_versions()
+      |> Enum.map(fn vsn ->
+        quote location: :keep, bind_quoted: [fields_list: fields_list, vsn: Macro.escape(vsn)] do
+          version_fields =
+            fields_list
+            |> Enum.filter(&Structure.valid_field?(&1, vsn))
+            |> Keyword.keys()
+
+          defp do_load(fields_values, unquote(Macro.escape(vsn))) do
+            attrs =
+              unquote(version_fields)
+              |> Enum.zip(fields_values)
+              |> Enum.into(%{})
+
+            struct(__MODULE__, attrs)
+          end
+        end
+      end)
+
     quote location: :keep do
       @behaviour Structure
 
       def get_tag(), do: unquote(tag)
 
       # by default
-      def version_requirement(), do: Version.parse_requirement!(">= 0.0.0")
+      def version_requirement(), do: unquote(Macro.escape(requirement))
 
-      def load(fields_values, bolt_version) do
-        attrs =
-          unquote(fields_list)
-          # pick fields that satisfy version requirement
-          |> Enum.filter(&Structure.valid_field?(&1, bolt_version))
-          |> Keyword.keys()
-          |> Enum.zip(fields_values)
-          |> Enum.into(%{})
-
-        struct(__MODULE__, attrs)
-      end
+      def load(fields_values, bolt_version), do: do_load(fields_values, bolt_version)
 
       defoverridable version_requirement: 0, load: 2
+
+      unquote(loader_per_version)
     end
   end
 
