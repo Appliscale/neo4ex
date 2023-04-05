@@ -1,7 +1,7 @@
-defmodule Neo4Ex.PackStream.DecoderTest do
+defmodule Neo4ex.PackStream.DecoderTest do
   use ExUnit.Case, async: true
 
-  alias Neo4Ex.PackStream.Decoder
+  alias Neo4ex.PackStream.Decoder
 
   describe "decode/1" do
     test "decodes basic types" do

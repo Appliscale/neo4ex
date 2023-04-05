@@ -1,5 +1,5 @@
-defmodule Neo4Ex.BoltProtocol.Structure.Graph.Date do
-  use Neo4Ex.BoltProtocol.Structure
+defmodule Neo4ex.BoltProtocol.Structure.Graph.Date do
+  use Neo4ex.BoltProtocol.Structure
 
   # field order is important! its enforced by PackStream
   structure 0x44 do
@@ -11,9 +11,9 @@ defmodule Neo4Ex.BoltProtocol.Structure.Graph.Date do
   end
 end
 
-defimpl Neo4Ex.BoltProtocol.Encoder, for: Date do
-  alias Neo4Ex.BoltProtocol.Encoder
-  alias Neo4Ex.BoltProtocol.Structure.Graph.Date, as: GraphDate
+defimpl Neo4ex.BoltProtocol.Encoder, for: Date do
+  alias Neo4ex.BoltProtocol.Encoder
+  alias Neo4ex.BoltProtocol.Structure.Graph.Date, as: GraphDate
 
   def encode(struct, bolt_version) do
     days = Date.diff(struct, ~D[1970-01-01])

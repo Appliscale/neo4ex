@@ -1,7 +1,7 @@
-defmodule Neo4Ex.PackStream.EncoderTest do
+defmodule Neo4ex.PackStream.EncoderTest do
   use ExUnit.Case, async: true
 
-  alias Neo4Ex.PackStream.Encoder
+  alias Neo4ex.PackStream.Encoder
 
   describe "encode/1" do
     test "returns valid binary representation of random small Integers" do

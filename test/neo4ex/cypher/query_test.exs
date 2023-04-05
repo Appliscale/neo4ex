@@ -1,7 +1,7 @@
-defmodule Neo4Ex.Cypher.QueryTest do
+defmodule Neo4ex.Cypher.QueryTest do
   use ExUnit.Case, async: true
 
-  alias Neo4Ex.Cypher.Query
+  alias Neo4ex.Cypher.Query
 
   describe "DBConnection.Query" do
     test "parse/2 ensures that params are map" do

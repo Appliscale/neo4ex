@@ -1,5 +1,5 @@
-defmodule Neo4Ex.BoltProtocol.Structure.Graph.LocalTime do
-  use Neo4Ex.BoltProtocol.Structure
+defmodule Neo4ex.BoltProtocol.Structure.Graph.LocalTime do
+  use Neo4ex.BoltProtocol.Structure
 
   # Elixir supports 6-digit precission for time, this means we can use microsecodns but not nanoseconds
   # this library aims for simplicity, so we return "lost" nanoseconds as separate value
@@ -16,9 +16,9 @@ defmodule Neo4Ex.BoltProtocol.Structure.Graph.LocalTime do
   end
 end
 
-defimpl Neo4Ex.BoltProtocol.Encoder, for: Time do
-  alias Neo4Ex.BoltProtocol.Encoder
-  alias Neo4Ex.BoltProtocol.Structure.Graph.LocalTime
+defimpl Neo4ex.BoltProtocol.Encoder, for: Time do
+  alias Neo4ex.BoltProtocol.Encoder
+  alias Neo4ex.BoltProtocol.Structure.Graph.LocalTime
 
   def encode(struct, bolt_version) do
     Encoder.encode(

@@ -1,4 +1,4 @@
-defprotocol Neo4Ex.BoltProtocol.Encoder do
+defprotocol Neo4ex.BoltProtocol.Encoder do
   @moduledoc """
   Encoding to Bolt Structures
   """
@@ -7,10 +7,10 @@ defprotocol Neo4Ex.BoltProtocol.Encoder do
   def encode(term, bolt_version)
 end
 
-defimpl Neo4Ex.BoltProtocol.Encoder, for: List do
-  alias Neo4Ex.Utils
-  alias Neo4Ex.PackStream.Encoder
-  alias Neo4Ex.BoltProtocol.Encoder, as: BoltEncoder
+defimpl Neo4ex.BoltProtocol.Encoder, for: List do
+  alias Neo4ex.Utils
+  alias Neo4ex.PackStream.Encoder
+  alias Neo4ex.BoltProtocol.Encoder, as: BoltEncoder
 
   def encode(term, bolt_version) do
     encoded_data =
@@ -29,10 +29,10 @@ defimpl Neo4Ex.BoltProtocol.Encoder, for: List do
   end
 end
 
-defimpl Neo4Ex.BoltProtocol.Encoder, for: Map do
-  alias Neo4Ex.Utils
-  alias Neo4Ex.PackStream.Encoder
-  alias Neo4Ex.BoltProtocol.Encoder, as: BoltEncoder
+defimpl Neo4ex.BoltProtocol.Encoder, for: Map do
+  alias Neo4ex.Utils
+  alias Neo4ex.PackStream.Encoder
+  alias Neo4ex.BoltProtocol.Encoder, as: BoltEncoder
 
   def encode(term, bolt_version) do
     encoded_data =

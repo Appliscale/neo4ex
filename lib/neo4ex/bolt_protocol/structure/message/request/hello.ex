@@ -1,7 +1,7 @@
-defmodule Neo4Ex.BoltProtocol.Structure.Message.Request.Hello do
-  use Neo4Ex.BoltProtocol.Structure
+defmodule Neo4ex.BoltProtocol.Structure.Message.Request.Hello do
+  use Neo4ex.BoltProtocol.Structure
 
-  alias Neo4Ex.BoltProtocol.Structure.Message.Extra
+  alias Neo4ex.BoltProtocol.Structure.Message.Extra
 
   structure 0x01 do
     field(:extra, default: %Extra.Hello{})

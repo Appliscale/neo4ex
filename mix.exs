@@ -1,4 +1,4 @@
-defmodule Neo4Ex.MixProject do
+defmodule Neo4ex.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/appliscale/neo4ex"
@@ -17,9 +17,9 @@ defmodule Neo4Ex.MixProject do
       docs: docs(),
       test_coverage: [
         ignore_modules: [
-          Neo4Ex.BoltProtocol.Structure,
-          Neo4Ex.PackStream.DecoderBuilder,
-          Neo4Ex.PackStream.Exceptions.MarkersError
+          Neo4ex.BoltProtocol.Structure,
+          Neo4ex.PackStream.DecoderBuilder,
+          Neo4ex.PackStream.Exceptions.MarkersError
         ],
         summary: [
           threshold: 80
@@ -84,14 +84,14 @@ defmodule Neo4Ex.MixProject do
       source_ref: "v#{@version}",
       source_url: @source_url,
       nest_modules_by_prefix: [
-        Neo4Ex.BoltProtocol,
-        Neo4Ex.PackStream,
-        Neo4Ex.BoltProtocol.Structure.Graph,
-        Neo4Ex.BoltProtocol.Structure.Graph.Legacy,
-        Neo4Ex.BoltProtocol.Structure.Message.Request,
-        Neo4Ex.BoltProtocol.Structure.Message.Detail,
-        Neo4Ex.BoltProtocol.Structure.Message.Summary,
-        Neo4Ex.BoltProtocol.Structure.Message.Extra
+        Neo4ex.BoltProtocol,
+        Neo4ex.PackStream,
+        Neo4ex.BoltProtocol.Structure.Graph,
+        Neo4ex.BoltProtocol.Structure.Graph.Legacy,
+        Neo4ex.BoltProtocol.Structure.Message.Request,
+        Neo4ex.BoltProtocol.Structure.Message.Detail,
+        Neo4ex.BoltProtocol.Structure.Message.Summary,
+        Neo4ex.BoltProtocol.Structure.Message.Extra
       ],
       groups_for_modules: [
         Structure: ~r/BoltProtocol\.Structure\.Graph/,

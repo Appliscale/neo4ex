@@ -1,8 +1,8 @@
-defmodule Neo4Ex.PackStream.DecoderBuilder do
+defmodule Neo4ex.PackStream.DecoderBuilder do
   @moduledoc false
 
-  alias Neo4Ex.Utils
-  alias Neo4Ex.PackStream.Markers
+  alias Neo4ex.Utils
+  alias Neo4ex.PackStream.Markers
 
   defmacro register_decoder(type, marker_var, data_var, do: block) do
     type

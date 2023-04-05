@@ -1,8 +1,8 @@
-defmodule Neo4Ex.BoltProtocol.Structure.Graph.DateTimeTest do
+defmodule Neo4ex.BoltProtocol.Structure.Graph.DateTimeTest do
   use ExUnit.Case, async: true
 
-  alias Neo4Ex.BoltProtocol.Structure.Graph.DateTime, as: GraphDateTime
-  alias Neo4Ex.BoltProtocol.Encoder
+  alias Neo4ex.BoltProtocol.Structure.Graph.DateTime, as: GraphDateTime
+  alias Neo4ex.BoltProtocol.Encoder
 
   describe "load/2" do
     test "returns DateTime with proper value" do
@@ -18,7 +18,7 @@ defmodule Neo4Ex.BoltProtocol.Structure.Graph.DateTimeTest do
     end
   end
 
-  describe "Neo4Ex.BoltProtocol.Encoder" do
+  describe "Neo4ex.BoltProtocol.Encoder" do
     test "encodes DateTime properly" do
       assert <<0xB3, 0x49, 100, 0xC9, 2000::16, 0>> ==
                Encoder.encode(~U[1970-01-01 00:01:40.000002Z], "4.0.0")

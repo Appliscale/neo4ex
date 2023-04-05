@@ -1,4 +1,4 @@
-defmodule Neo4Ex.BoltProtocol do
+defmodule Neo4ex.BoltProtocol do
   @moduledoc """
   Bolt is an application protocol for the execution of database queries via a database query language, such as Cypher.
   More info: https://neo4j.com/docs/bolt/current/bolt
@@ -7,15 +7,15 @@ defmodule Neo4Ex.BoltProtocol do
 
   require Logger
 
-  alias Neo4Ex.BoltProtocol.Structure.Message.Request.Discard
-  alias Neo4Ex.Cypher
-  alias Neo4Ex.Connector
-  alias Neo4Ex.Connector.Socket
+  alias Neo4ex.BoltProtocol.Structure.Message.Request.Discard
+  alias Neo4ex.Cypher
+  alias Neo4ex.Connector
+  alias Neo4ex.Connector.Socket
 
-  alias Neo4Ex.BoltProtocol.Structure.Message.Extra
-  alias Neo4Ex.BoltProtocol.Structure.Message.Detail.Record
+  alias Neo4ex.BoltProtocol.Structure.Message.Extra
+  alias Neo4ex.BoltProtocol.Structure.Message.Detail.Record
 
-  alias Neo4Ex.BoltProtocol.Structure.Message.Request.{
+  alias Neo4ex.BoltProtocol.Structure.Message.Request.{
     Hello,
     Logon,
     Begin,
@@ -26,9 +26,9 @@ defmodule Neo4Ex.BoltProtocol do
     Goodbye
   }
 
-  alias Neo4Ex.BoltProtocol.Structure.Message.Summary.{Success, Failure}
+  alias Neo4ex.BoltProtocol.Structure.Message.Summary.{Success, Failure}
 
-  @user_agent "Neo4Ex/#{Application.spec(:neo4ex, :vsn)}"
+  @user_agent "Neo4ex/#{Application.spec(:neo4ex, :vsn)}"
 
   @impl true
   def connect(opts) do

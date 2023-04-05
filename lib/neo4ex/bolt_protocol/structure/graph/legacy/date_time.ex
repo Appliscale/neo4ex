@@ -1,5 +1,5 @@
-defmodule Neo4Ex.BoltProtocol.Structure.Graph.Legacy.DateTime do
-  use Neo4Ex.BoltProtocol.Structure
+defmodule Neo4ex.BoltProtocol.Structure.Graph.Legacy.DateTime do
+  use Neo4ex.BoltProtocol.Structure
 
   # field order is important! its enforced by PackStream
   structure 0x46 do

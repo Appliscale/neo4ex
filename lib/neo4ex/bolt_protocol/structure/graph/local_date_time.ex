@@ -1,5 +1,5 @@
-defmodule Neo4Ex.BoltProtocol.Structure.Graph.LocalDateTime do
-  use Neo4Ex.BoltProtocol.Structure
+defmodule Neo4ex.BoltProtocol.Structure.Graph.LocalDateTime do
+  use Neo4ex.BoltProtocol.Structure
 
   require Logger
 
@@ -22,9 +22,9 @@ defmodule Neo4Ex.BoltProtocol.Structure.Graph.LocalDateTime do
   end
 end
 
-defimpl Neo4Ex.BoltProtocol.Encoder, for: NaiveDateTime do
-  alias Neo4Ex.BoltProtocol.Encoder
-  alias Neo4Ex.BoltProtocol.Structure.Graph.LocalDateTime
+defimpl Neo4ex.BoltProtocol.Encoder, for: NaiveDateTime do
+  alias Neo4ex.BoltProtocol.Encoder
+  alias Neo4ex.BoltProtocol.Structure.Graph.LocalDateTime
 
   def encode(struct, bolt_version) do
     second_in_ns = Integer.pow(10, 9)

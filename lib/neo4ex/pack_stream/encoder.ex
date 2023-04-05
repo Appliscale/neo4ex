@@ -1,4 +1,4 @@
-defprotocol Neo4Ex.PackStream.Encoder do
+defprotocol Neo4ex.PackStream.Encoder do
   @moduledoc """
   Encoding Elixir types to PackStream data
   """
@@ -7,9 +7,9 @@ defprotocol Neo4Ex.PackStream.Encoder do
   def encode(term)
 end
 
-defimpl Neo4Ex.PackStream.Encoder, for: Integer do
-  alias Neo4Ex.Utils
-  alias Neo4Ex.PackStream.Markers
+defimpl Neo4ex.PackStream.Encoder, for: Integer do
+  alias Neo4ex.Utils
+  alias Neo4ex.PackStream.Markers
 
   def encode(number) do
     # get real size of number to retrieve MSB
@@ -44,8 +44,8 @@ defimpl Neo4Ex.PackStream.Encoder, for: Integer do
   end
 end
 
-defimpl Neo4Ex.PackStream.Encoder, for: Float do
-  alias Neo4Ex.PackStream.Markers
+defimpl Neo4ex.PackStream.Encoder, for: Float do
+  alias Neo4ex.PackStream.Markers
 
   def encode(term) do
     marker = Markers.get!(@for)
@@ -53,8 +53,8 @@ defimpl Neo4Ex.PackStream.Encoder, for: Float do
   end
 end
 
-defimpl Neo4Ex.PackStream.Encoder, for: BitString do
-  alias Neo4Ex.Utils
+defimpl Neo4ex.PackStream.Encoder, for: BitString do
+  alias Neo4ex.Utils
 
   def encode(term) do
     markers_type = if is_binary(term) and String.printable?(term), do: String, else: BitString
@@ -66,8 +66,8 @@ defimpl Neo4Ex.PackStream.Encoder, for: BitString do
   end
 end
 
-defimpl Neo4Ex.PackStream.Encoder, for: Atom do
-  alias Neo4Ex.PackStream.{Encoder, Markers}
+defimpl Neo4ex.PackStream.Encoder, for: Atom do
+  alias Neo4ex.PackStream.{Encoder, Markers}
 
   # for nil and boolean we just return a marker
   def encode(term) when is_boolean(term) or is_nil(term), do: <<Markers.get!(term)>>
@@ -79,8 +79,8 @@ defimpl Neo4Ex.PackStream.Encoder, for: Atom do
   end
 end
 
-defimpl Neo4Ex.PackStream.Encoder, for: List do
-  alias Neo4Ex.Utils
+defimpl Neo4ex.PackStream.Encoder, for: List do
+  alias Neo4ex.Utils
 
   # PackStream only informs that the List starts
   # it can't encode its items since those can be ANY type (some of them may need Bolt version information to be encoded)
@@ -91,8 +91,8 @@ defimpl Neo4Ex.PackStream.Encoder, for: List do
   end
 end
 
-defimpl Neo4Ex.PackStream.Encoder, for: Map do
-  alias Neo4Ex.Utils
+defimpl Neo4ex.PackStream.Encoder, for: Map do
+  alias Neo4ex.Utils
 
   # PackStream only informs that the Map starts
   # it can't encode its items since those can be ANY type (some of them may need Bolt version information to be encoded)

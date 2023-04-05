@@ -1,8 +1,8 @@
-defmodule Neo4Ex.PackStream.Markers do
+defmodule Neo4ex.PackStream.Markers do
   @moduledoc """
   This module defines values of markers that PackStream uses to detect the type of data
   """
-  alias Neo4Ex.PackStream.Exceptions
+  alias Neo4ex.PackStream.Exceptions
 
   @spec get!(term()) :: integer() | [integer()]
   def get!(term)

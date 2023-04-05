@@ -1,4 +1,4 @@
-defmodule Neo4Ex.Connector.Socket do
+defmodule Neo4ex.Connector.Socket do
   @moduledoc """
   A default socket interface used to communicate to a Neo4j instance.
   Any other socket implementing the same interface can be used

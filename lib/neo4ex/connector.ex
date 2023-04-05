@@ -1,4 +1,4 @@
-defmodule Neo4Ex.Connector do
+defmodule Neo4ex.Connector do
   @moduledoc """
   Module responsible for communication with the database engine
   """
@@ -6,16 +6,18 @@ defmodule Neo4Ex.Connector do
 
   import Kernel, except: [send: 2]
 
-  alias Neo4Ex.Connector.Socket
+  alias Neo4ex.Connector.Socket
 
-  alias Neo4Ex.BoltProtocol
-  alias Neo4Ex.BoltProtocol.{Encoder, Decoder}
+  alias Neo4ex.BoltProtocol
+  alias Neo4ex.BoltProtocol.{Encoder, Decoder}
 
   # Chunk headers are 16-bit unsigned integers
   @chunk_size 16
   @noop <<0::size(@chunk_size)>>
   @supported_versions [4.3, 4.2, 4.1, 4.0]
-  @connector_opts Application.compile_env(:neo4ex, Neo4Ex.Connector, [])
+  @connector_opts Application.compile_env(:neo4ex, Neo4ex.Connector, [])
+
+  def supported_versions(), do: @supported_versions
 
   def send_noop(%Socket{sock: sock}), do: Socket.send(sock, @noop)
 

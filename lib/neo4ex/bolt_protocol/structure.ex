@@ -1,18 +1,19 @@
-defmodule Neo4Ex.BoltProtocol.Structure do
+defmodule Neo4ex.BoltProtocol.Structure do
   @moduledoc """
   Provides some boilerplate for handling Bolt structures.
   """
-  alias Neo4Ex.BoltProtocol.Structure
-  alias Neo4Ex.BoltProtocol.Encoder, as: BoltEncoder
-  alias Neo4Ex.PackStream.Encoder
-  alias Neo4Ex.Utils
+  alias Neo4ex.BoltProtocol.Structure
+  alias Neo4ex.BoltProtocol.Encoder, as: BoltEncoder
+  alias Neo4ex.PackStream.Encoder
+  alias Neo4ex.Utils
 
-  @callback get_tag(Version.version()) :: integer() | nil
+  @callback get_tag() :: integer()
+  @callback version_requirement() :: Version.requirement()
   @callback load(list(any()), Version.version()) :: any()
 
   defmacro __using__(_) do
     quote do
-      import Neo4Ex.BoltProtocol.Structure
+      import Neo4ex.BoltProtocol.Structure
     end
   end
 
@@ -114,9 +115,10 @@ defmodule Neo4Ex.BoltProtocol.Structure do
     quote location: :keep do
       @behaviour Structure
 
-      @tag unquote(tag)
+      def get_tag(), do: unquote(tag)
 
-      def get_tag(_bolt_version), do: @tag
+      # by default
+      def version_requirement(), do: Version.parse_requirement!(">= 0.0.0")
 
       def load(fields_values, bolt_version) do
         attrs =
@@ -130,14 +132,14 @@ defmodule Neo4Ex.BoltProtocol.Structure do
         struct(__MODULE__, attrs)
       end
 
-      defoverridable get_tag: 1, load: 2
+      defoverridable version_requirement: 0, load: 2
     end
   end
 
   # embedded structure must be a map but we should take advantage of field versioning
   defp embedded_encoder_protocol(fields_list) do
     quote location: :keep do
-      defimpl Neo4Ex.BoltProtocol.Encoder do
+      defimpl Neo4ex.BoltProtocol.Encoder do
         def encode(struct, bolt_version) do
           valid_fields =
             unquote(fields_list)
@@ -154,29 +156,22 @@ defmodule Neo4Ex.BoltProtocol.Structure do
 
   defp encoder_protocol(fields_list) do
     quote location: :keep do
-      # used to match the structure by its tag during runtime
-      defimpl Neo4Ex.BoltProtocol.StructureRegistry do
-        def get_tag(%module{}, bolt_version), do: module.get_tag(bolt_version)
-      end
-
-      defimpl Neo4Ex.BoltProtocol.Encoder do
-        alias Neo4Ex.BoltProtocol.StructureRegistry
-        alias Neo4Ex.PackStream.{Markers, Exceptions}
+      defimpl Neo4ex.BoltProtocol.Encoder do
+        alias Neo4ex.PackStream.{Markers, Exceptions}
 
         def encode(%module{} = struct, bolt_version) do
-          case StructureRegistry.get_tag(struct, bolt_version) do
-            tag when is_integer(tag) ->
-              data =
-                unquote(fields_list)
-                # pick fields that satisfy version requirement
-                |> Enum.filter(&Structure.valid_field?(&1, bolt_version))
-                |> Enum.map(&Structure.encode(&1, struct, bolt_version))
+          if Version.match?(bolt_version, module.version_requirement()) do
+            data =
+              unquote(fields_list)
+              # pick fields that satisfy version requirement
+              |> Enum.filter(&Structure.valid_field?(&1, bolt_version))
+              |> Enum.map(&Structure.encode(&1, struct, bolt_version))
 
-              marker = Markers.get!(:struct)
-              IO.iodata_to_binary([<<marker::4, length(data)::4, tag>>, data])
-
-            nil ->
-              raise Exceptions.EncodeError, {module, bolt_version}
+            marker = Markers.get!(:struct)
+            tag = module.get_tag()
+            IO.iodata_to_binary([<<marker::4, length(data)::4, tag>>, data])
+          else
+            raise Exceptions.EncodeError, {module, bolt_version}
           end
         end
       end

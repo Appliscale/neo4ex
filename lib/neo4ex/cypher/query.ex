@@ -1,9 +1,9 @@
-defmodule Neo4Ex.Cypher.Query do
+defmodule Neo4ex.Cypher.Query do
   @moduledoc """
-  This module is responsible for generating Cypher queries that can be passed to the `Neo4Ex.run/1` or `Neo4Ex.stream/2`
+  This module is responsible for generating Cypher queries that can be passed to the `Neo4ex.run/1` or `Neo4ex.stream/2`
   """
 
-  alias Neo4Ex.Cypher.Query
+  alias Neo4ex.Cypher.Query
 
   defstruct query: "", params: %{}, opts: []
 

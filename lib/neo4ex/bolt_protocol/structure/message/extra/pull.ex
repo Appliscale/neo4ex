@@ -1,5 +1,5 @@
-defmodule Neo4Ex.BoltProtocol.Structure.Message.Extra.Pull do
-  use Neo4Ex.BoltProtocol.Structure
+defmodule Neo4ex.BoltProtocol.Structure.Message.Extra.Pull do
+  use Neo4ex.BoltProtocol.Structure
 
   embeded_structure do
     field(:n, default: nil)

@@ -1,11 +1,11 @@
-defmodule Neo4Ex.PackStream.Decoder do
+defmodule Neo4ex.PackStream.Decoder do
   @moduledoc """
   Decoding from Bolt Structures to Elixir types
   """
 
-  import Neo4Ex.PackStream.DecoderBuilder
+  import Neo4ex.PackStream.DecoderBuilder
 
-  alias Neo4Ex.Utils
+  alias Neo4ex.Utils
 
   @spec decode(binary()) :: {term(), binary()}
   def decode(data), do: do_decode(data)

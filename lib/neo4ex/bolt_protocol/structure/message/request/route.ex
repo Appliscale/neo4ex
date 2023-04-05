@@ -1,7 +1,7 @@
-defmodule Neo4Ex.BoltProtocol.Structure.Message.Request.Route do
-  use Neo4Ex.BoltProtocol.Structure
+defmodule Neo4ex.BoltProtocol.Structure.Message.Request.Route do
+  use Neo4ex.BoltProtocol.Structure
 
-  alias Neo4Ex.BoltProtocol.Structure.Message.Extra
+  alias Neo4ex.BoltProtocol.Structure.Message.Extra
 
   structure 0x66 do
     field(:routing, default: %{})
@@ -10,8 +10,6 @@ defmodule Neo4Ex.BoltProtocol.Structure.Message.Request.Route do
     field(:extra, default: %Extra.Route{}, version: ">= 4.4.0")
   end
 
-  def get_tag(bolt_version) do
-    # "Route" message exists since version 4.3
-    if Version.match?(bolt_version, "< 4.3.0"), do: nil, else: @tag
-  end
+  # "Route" message exists since version 4.3
+  def version_requirement(), do: ">= 4.3.0"
 end

@@ -1,1 +1,1 @@
-Mox.defmock(Neo4Ex.Connector.SocketMock, for: Neo4Ex.Connector.Socket)
+Mox.defmock(Neo4ex.Connector.SocketMock, for: Neo4ex.Connector.Socket)

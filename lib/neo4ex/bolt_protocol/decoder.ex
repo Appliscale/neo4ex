@@ -1,13 +1,16 @@
-defmodule Neo4Ex.BoltProtocol.Decoder do
+defmodule Neo4ex.BoltProtocol.Decoder do
   @moduledoc """
   Decoding from Bolt Structures to Elixir Structs
   """
-  alias Neo4Ex.PackStream.{Markers, Decoder}
-  alias Neo4Ex.BoltProtocol.StructureRegistry
-
-  @struct_marker Markers.get!(:struct)
+  alias Neo4ex.Utils
+  alias Neo4ex.PackStream.{Markers, Decoder}
 
   @spec decode(binary(), Version.version()) :: term()
+  def decode(data, bolt_version) when is_binary(bolt_version) do
+    bolt_version = Version.parse!(bolt_version)
+    decode(data, bolt_version)
+  end
+
   def decode(data, bolt_version) when is_binary(data) do
     Stream.unfold(data, fn
       # end of data
@@ -16,32 +19,39 @@ defmodule Neo4Ex.BoltProtocol.Decoder do
     end)
   end
 
-  # if it's struct then we do lookup by Protocol
-  defp do_decode(
-         <<@struct_marker::4, fields_count::4, struct_tag, rest::binary>>,
-         bolt_version
-       ) do
-    with(
-      {:consolidated, impls} <- StructureRegistry.__protocol__(:impls),
-      struct when is_atom(struct) <-
-        Enum.find(impls, fn module ->
-          module |> struct() |> StructureRegistry.get_tag(bolt_version) == struct_tag
-        end)
-    ) do
+  # build decode functions for every version for every structure
+  __ENV__.file
+  |> Path.dirname()
+  |> Utils.expand_dir("structure")
+  |> Enum.filter(fn module -> function_exported?(module, :get_tag, 0) end)
+  |> Enum.flat_map(fn module ->
+    module.version_requirement()
+    |> Utils.list_valid_versions()
+    |> Enum.map(fn vsn -> {module, vsn} end)
+  end)
+  |> Enum.map(fn {module, vsn} ->
+    struct_tag = module.get_tag()
+    struct_marker = Markers.get!(:struct)
+    vsn = Macro.escape(vsn)
+
+    defp do_decode(
+           <<unquote(struct_marker)::4, fields_count::4, unquote(struct_tag), rest::binary>>,
+           unquote(vsn)
+         ) do
       {field_values_list, rest} =
         if fields_count == 0 do
           {[], rest}
         else
           Enum.map_reduce(1..fields_count, rest, fn _, d ->
-            do_decode(d, bolt_version)
+            do_decode(d, unquote(vsn))
           end)
         end
 
-      data = struct.load(field_values_list, bolt_version)
+      data = unquote(module).load(field_values_list, unquote(vsn))
 
       {data, rest}
     end
-  end
+  end)
 
   # otherwise it can be handled by PackStream decoder
   defp do_decode(data, bolt_version) do

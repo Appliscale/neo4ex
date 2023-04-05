@@ -1,5 +1,5 @@
-defmodule Neo4Ex.BoltProtocol.Structure.Message.Request.Logon do
-  use Neo4Ex.BoltProtocol.Structure
+defmodule Neo4ex.BoltProtocol.Structure.Message.Request.Logon do
+  use Neo4ex.BoltProtocol.Structure
 
   # TODO: implement validation
   # @predefined_schemes ~w(none basic bearer kerberos)

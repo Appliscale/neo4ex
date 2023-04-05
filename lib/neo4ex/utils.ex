@@ -1,10 +1,12 @@
-defmodule Neo4Ex.Utils do
+defmodule Neo4ex.Utils do
   @moduledoc false
 
-  alias Neo4Ex.BoltProtocol
+  alias Neo4ex.BoltProtocol
 
-  alias Neo4Ex.PackStream
-  alias Neo4Ex.PackStream.Markers
+  alias Neo4ex.PackStream
+  alias Neo4ex.PackStream.Markers
+
+  @lib_dir File.cwd!() |> Path.join("lib")
 
   # binaries and lists share similar logic
   def enumerable_header(term_size, markers_type) do
@@ -52,5 +54,35 @@ defmodule Neo4Ex.Utils do
       PackStream.Encoder.impl_for(term) -> PackStream.Encoder
       true -> nil
     end
+  end
+
+  def expand_dir(base, file) do
+    path = Path.join(base, file)
+
+    case File.dir?(path) do
+      true ->
+        path
+        |> File.ls!()
+        |> Enum.flat_map(fn sub -> expand_dir(path, sub) end)
+
+      false ->
+        file =
+          file
+          |> Path.rootname(".ex")
+          |> Macro.camelize()
+
+        base
+        |> Path.relative_to(@lib_dir)
+        |> Macro.camelize()
+        |> Module.concat(file)
+        |> Code.ensure_compiled!()
+        |> List.wrap()
+    end
+  end
+
+  def list_valid_versions(requirement) do
+    Neo4ex.Connector.supported_versions()
+    |> Enum.map(fn ver -> ver |> Float.to_string() |> Kernel.<>(".0") |> Version.parse!() end)
+    |> Enum.filter(fn ver -> Version.match?(ver, requirement) end)
   end
 end

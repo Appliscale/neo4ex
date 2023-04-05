@@ -1,19 +1,19 @@
-defmodule Neo4Ex.ConnectorTest do
+defmodule Neo4ex.ConnectorTest do
   use ExUnit.Case, async: true
 
   import Mox
 
-  alias Neo4Ex.BoltProtocol.Structure.Message.Request.Run
-  alias Neo4Ex.BoltProtocol.Encoder
+  alias Neo4ex.BoltProtocol.Structure.Message.Request.Run
+  alias Neo4ex.BoltProtocol.Encoder
 
-  alias Neo4Ex.Connector
-  alias Neo4Ex.Connector.SocketMock
+  alias Neo4ex.Connector
+  alias Neo4ex.Connector.SocketMock
 
   setup :verify_on_exit!
 
   setup do
     # fake socket
-    %{socket: %Connector.Socket{}}
+    %{socket: %Connector.Socket{bolt_version: "4.3.0"}}
   end
 
   describe "send_noop/1" do
@@ -26,7 +26,7 @@ defmodule Neo4Ex.ConnectorTest do
   describe "send/2" do
     test "sends message to socket", %{socket: socket} do
       message = %Run{query: "message"}
-      encoded_message = Encoder.encode(message, "0.0.0")
+      encoded_message = Encoder.encode(message, "4.0.0")
       message_size = byte_size(encoded_message)
 
       expect(SocketMock, :send, fn _,

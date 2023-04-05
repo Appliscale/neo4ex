@@ -1,4 +1,4 @@
-# Neo4Ex
+# Neo4ex
 
 Simple but powerful library that aims to add Ecto-like support for graph databases in Elixir.  
 
@@ -27,27 +27,27 @@ end
 1. Define connection params in config
 
     ```elixir
-    config :neo4ex, Neo4Ex.Connector,
+    config :neo4ex, Neo4ex.Connector,
       hostname: "localhost", # required
       port: 7687, # default
       principal: "neo4j", # optional
       credentials: "neo4j", # optional
     ```
 
-2. Add `Neo4Ex.Connector` to your `application.ex`
+2. Add `Neo4ex.Connector` to your `application.ex`
 
     ```elixir
     children = [
       # Starts the database connection pool
-      Neo4Ex.Connector
+      Neo4ex.Connector
     ]
     ```
 
-3. Query database using `Neo4Ex.run/1` and `Neo4Ex.Cypher.Query`
+3. Query database using `Neo4ex.run/1` and `Neo4ex.Cypher.Query`
 
     ```elixir
-    Neo4Ex.run(
-      %Neo4Ex.Cypher.Query{query: "MATCH (n) RETURN n"}
+    Neo4ex.run(
+      %Neo4ex.Cypher.Query{query: "MATCH (n) RETURN n"}
     )
     ```
 

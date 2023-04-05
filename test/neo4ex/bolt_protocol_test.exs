@@ -1,29 +1,29 @@
-defmodule Neo4Ex.BoltProtocolTest do
+defmodule Neo4ex.BoltProtocolTest do
   use ExUnit.Case, async: true
 
   import Mox
 
-  alias Neo4Ex.Cypher
-  alias Neo4Ex.Connector.{Socket, SocketMock}
-  alias Neo4Ex.BoltProtocol
-  alias Neo4Ex.BoltProtocol.Encoder
-  alias Neo4Ex.BoltProtocol.Structure.Message.Summary.Success
-  alias Neo4Ex.BoltProtocol.Structure.Message.Detail.Record
+  alias Neo4ex.Cypher
+  alias Neo4ex.Connector.{Socket, SocketMock}
+  alias Neo4ex.BoltProtocol
+  alias Neo4ex.BoltProtocol.Encoder
+  alias Neo4ex.BoltProtocol.Structure.Message.Summary.Success
+  alias Neo4ex.BoltProtocol.Structure.Message.Detail.Record
 
   setup :verify_on_exit!
 
   setup do
     query = %Cypher.Query{query: "testing...123"}
     # fake socket
-    %{socket: %Socket{}, query: query}
+    %{socket: %Socket{bolt_version: "4.3.0"}, query: query}
   end
 
   describe "handle_execute/4" do
     test "returns data from stream", %{socket: socket, query: query} do
       message = %Record{data: ["message"]}
-      encoded_message = Encoder.encode(message, "0.0.0")
+      encoded_message = Encoder.encode(message, "4.0.0")
       success_message = %Success{metadata: %{"t_first" => 1}}
-      encoded_success_message = Encoder.encode(success_message, "0.0.0")
+      encoded_success_message = Encoder.encode(success_message, "4.0.0")
 
       SocketMock
       # query
@@ -49,9 +49,9 @@ defmodule Neo4Ex.BoltProtocolTest do
 
     test "returns error if stream gets interrupted", %{socket: socket, query: query} do
       message = %Record{data: ["message"]}
-      encoded_message = Encoder.encode(message, "0.0.0")
+      encoded_message = Encoder.encode(message, "4.0.0")
       success_message = %Success{metadata: %{"t_first" => 1}}
-      encoded_success_message = Encoder.encode(success_message, "0.0.0")
+      encoded_success_message = Encoder.encode(success_message, "4.0.0")
 
       SocketMock
       # query

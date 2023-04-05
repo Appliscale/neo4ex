@@ -1,14 +1,14 @@
-defmodule Neo4Ex.BoltProtocol.EncoderTest do
+defmodule Neo4ex.BoltProtocol.EncoderTest do
   use ExUnit.Case, async: true
 
-  alias Neo4Ex.BoltProtocol.Structure.Graph.Relationship
-  alias Neo4Ex.BoltProtocol.Structure.Graph.Node
-  alias Neo4Ex.BoltProtocol.Structure.Graph.Legacy.DateTimeZoneId
-  alias Neo4Ex.BoltProtocol.Structure.Message.Request.{Hello, Route}
-  alias Neo4Ex.BoltProtocol.Structure.Message.Extra
+  alias Neo4ex.BoltProtocol.Structure.Graph.Relationship
+  alias Neo4ex.BoltProtocol.Structure.Graph.Node
+  alias Neo4ex.BoltProtocol.Structure.Graph.Legacy.DateTimeZoneId
+  alias Neo4ex.BoltProtocol.Structure.Message.Request.{Hello, Route}
+  alias Neo4ex.BoltProtocol.Structure.Message.Extra
 
-  alias Neo4Ex.BoltProtocol.Encoder
-  alias Neo4Ex.PackStream.Exceptions
+  alias Neo4ex.BoltProtocol.Encoder
+  alias Neo4ex.PackStream.Exceptions
 
   describe "encode/2" do
     test "returns valid binary representation of Lists" do
@@ -54,7 +54,7 @@ defmodule Neo4Ex.BoltProtocol.EncoderTest do
 
     test "handles encoding of Hello messages" do
       user_agent_bytes = byte_size("user_agent")
-      ua_bytes = byte_size("Neo4Ex/0.1.0")
+      ua_bytes = byte_size("Neo4ex/0.1.0")
       scheme_bytes = byte_size("scheme")
       none_bytes = byte_size("none")
       principal_bytes = byte_size("principal")
@@ -65,7 +65,7 @@ defmodule Neo4Ex.BoltProtocol.EncoderTest do
                ^principal_bytes::4, "principal", 0x80, 0x8::4, ^scheme_bytes::4, "scheme", 0x8::4,
                ^none_bytes::4, "none", 0x8::4, ^user_agent_bytes::4, "user_agent", 0x8::4,
                ^ua_bytes::4,
-               "Neo4Ex/0.1.0">> =
+               "Neo4ex/0.1.0">> =
                Encoder.encode(%Hello{extra: %Extra.Hello{scheme: "none"}}, "4.0.0")
     end
   end

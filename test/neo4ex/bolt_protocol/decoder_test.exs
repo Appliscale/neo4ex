@@ -1,13 +1,13 @@
-defmodule Neo4Ex.BoltProtocol.DecoderTest do
+defmodule Neo4ex.BoltProtocol.DecoderTest do
   use ExUnit.Case, async: true
 
-  alias Neo4Ex.BoltProtocol.Structure.Graph.Relationship
-  alias Neo4Ex.BoltProtocol.Structure.Graph.Node
-  alias Neo4Ex.BoltProtocol.Structure.Graph.Legacy.DateTimeZoneId
+  alias Neo4ex.BoltProtocol.Structure.Graph.Relationship
+  alias Neo4ex.BoltProtocol.Structure.Graph.Node
+  alias Neo4ex.BoltProtocol.Structure.Graph.Legacy.DateTimeZoneId
 
-  alias Neo4Ex.BoltProtocol.Structure.Message.Request.Route
+  alias Neo4ex.BoltProtocol.Structure.Message.Request.Route
 
-  alias Neo4Ex.BoltProtocol.Decoder
+  alias Neo4ex.BoltProtocol.Decoder
 
   describe "decode/2" do
     test "handles decoding of Node structures" do

@@ -3,18 +3,18 @@ defmodule Neo4ExTest do
 
   import Mox
 
-  alias Neo4Ex.Cypher.Query
-  alias Neo4Ex.Connector.SocketMock
-  alias Neo4Ex.BoltProtocol.Encoder
-  alias Neo4Ex.BoltProtocol.Structure.Message.Summary.Success
-  alias Neo4Ex.BoltProtocol.Structure.Message.Detail.Record
+  alias Neo4ex.Cypher.Query
+  alias Neo4ex.Connector.SocketMock
+  alias Neo4ex.BoltProtocol.Encoder
+  alias Neo4ex.BoltProtocol.Structure.Message.Summary.Success
+  alias Neo4ex.BoltProtocol.Structure.Message.Detail.Record
 
   setup :set_mox_from_context
   setup :verify_on_exit!
 
   setup do
     success_message = %Success{}
-    encoded_success_message = Encoder.encode(success_message, "0.0.0")
+    encoded_success_message = Encoder.encode(success_message, "4.0.0")
 
     SocketMock
     |> expect(:connect, fn 'localhost', 7687, [:binary, {:active, false}] ->
@@ -28,7 +28,7 @@ defmodule Neo4ExTest do
     |> expect(:send, fn _, _ -> :ok end)
     |> expect_message(encoded_success_message)
 
-    {:ok, _} = Neo4Ex.Connector.start_link([])
+    {:ok, _} = Neo4ex.Connector.start_link([])
 
     :ok
   end
@@ -36,9 +36,9 @@ defmodule Neo4ExTest do
   describe "run/1" do
     test "runs single query" do
       message = %Record{data: ["hello", "goodbye"]}
-      encoded_message = Encoder.encode(message, "0.0.0")
+      encoded_message = Encoder.encode(message, "4.0.0")
       success_message = %Success{metadata: %{"t_first" => 1}}
-      encoded_success_message = Encoder.encode(success_message, "0.0.0")
+      encoded_success_message = Encoder.encode(success_message, "4.0.0")
 
       SocketMock
       # query
@@ -54,16 +54,16 @@ defmodule Neo4ExTest do
       |> expect_message(encoded_success_message)
 
       q = %Query{}
-      assert {:ok, q, [["hello", "goodbye"], ["hello", "goodbye"]]} == Neo4Ex.run(q)
+      assert {:ok, q, [["hello", "goodbye"], ["hello", "goodbye"]]} == Neo4ex.run(q)
     end
   end
 
   describe "stream/1" do
     test "returns iterable stream" do
       message = %Record{data: ["hello", "goodbye"]}
-      encoded_message = Encoder.encode(message, "0.0.0")
+      encoded_message = Encoder.encode(message, "4.0.0")
       success_message = %Success{metadata: %{"t_first" => 1}}
-      encoded_success_message = Encoder.encode(success_message, "0.0.0")
+      encoded_success_message = Encoder.encode(success_message, "4.0.0")
 
       SocketMock
       # begin transaction
@@ -90,7 +90,7 @@ defmodule Neo4ExTest do
       q = %Query{}
 
       assert ["hello", "hello", "goodbye"] ==
-               Neo4Ex.stream(q, fn x, acc ->
+               Neo4ex.stream(q, fn x, acc ->
                  # this will stop stream in the middle
                  if acc == x, do: {:halt, [hd(x) | acc]}, else: {:cont, acc ++ x}
                end)

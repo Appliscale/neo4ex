@@ -1,4 +1,4 @@
-defmodule Neo4Ex.PackStream.Exceptions do
+defmodule Neo4ex.PackStream.Exceptions do
   @moduledoc false
 
   defmodule EncodeError do
