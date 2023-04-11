@@ -8,6 +8,8 @@ defmodule Neo4ExTest do
   alias Neo4ex.BoltProtocol.Encoder
   alias Neo4ex.BoltProtocol.Structure.Message.Summary.Success
   alias Neo4ex.BoltProtocol.Structure.Message.Detail.Record
+  # make it last alias so it doesn't break the ones above
+  alias Neo4ex.Neo4jConnection, as: Neo4ex
 
   setup :set_mox_from_context
   setup :verify_on_exit!
@@ -28,7 +30,7 @@ defmodule Neo4ExTest do
     |> expect(:send, fn _, _ -> :ok end)
     |> expect_message(encoded_success_message)
 
-    {:ok, _} = Neo4ex.Connector.start_link([])
+    {:ok, _} = Neo4ex.start_link([])
 
     :ok
   end

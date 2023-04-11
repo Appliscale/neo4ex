@@ -2,11 +2,10 @@ defmodule Neo4ex.Connector do
   @moduledoc """
   Module responsible for communication with the database engine
   """
-  use Supervisor
-
   import Kernel, except: [send: 2]
 
   alias Neo4ex.Connector.Socket
+  alias Neo4ex.Cypher
 
   alias Neo4ex.BoltProtocol
   alias Neo4ex.BoltProtocol.{Encoder, Decoder}
@@ -15,7 +14,90 @@ defmodule Neo4ex.Connector do
   @chunk_size 16
   @noop <<0::size(@chunk_size)>>
   @supported_versions [4.3, 4.2, 4.1, 4.0]
-  @connector_opts Application.compile_env(:neo4ex, Neo4ex.Connector, [])
+
+  defmacro __using__(otp_app: app) do
+    supported_versions = @supported_versions
+
+    quote do
+      use Supervisor
+
+      @connector_opts Application.compile_env(unquote(app), __MODULE__, [])
+
+      def start_link(opts) do
+        Supervisor.start_link(__MODULE__, opts, name: __MODULE__)
+      end
+
+      @impl true
+      def init(opts) do
+        opts = Keyword.merge(@connector_opts, opts)
+
+        children = [
+          %{
+            id: BoltProtocol,
+            start:
+              {DBConnection, :start_link,
+               [BoltProtocol, [{:versions, unquote(supported_versions)} | opts]]}
+          }
+        ]
+
+        Supervisor.init(children, strategy: :one_for_one)
+      end
+
+      @doc """
+      Executes Cypher query on the database and returns results.
+      This function always reads all data and returns a list of results.
+      If you need more control, use `stream/2`.
+      """
+      def run(%Cypher.Query{} = query) do
+        case prepare_query(query) do
+          {:ok, args} -> apply(DBConnection, :execute, args)
+          other -> other
+        end
+      end
+
+      @doc """
+      Executes Cypher query on the database and returns results.
+      This function uses reducer to read data from stream.
+      Reducer may finish prematurely. In that case, remaining part of the stream will be thrown away.
+      """
+      def stream(%Cypher.Query{} = query, reducer) when is_function(reducer, 2) do
+        with(
+          {:ok, [conn | args]} <- prepare_query(query),
+          {:ok, stream} <-
+            DBConnection.transaction(conn, fn conn ->
+              # we have to consume stream within transaction
+              DBConnection
+              |> apply(:stream, [conn | args])
+              |> Stream.reject(&is_nil/1)
+              |> Enum.reduce_while([], reducer)
+            end)
+        ) do
+          stream
+        end
+      end
+
+      def transaction(func) when is_function(func, 1) do
+        conn = connection_pool!()
+        DBConnection.transaction(conn, func)
+      end
+
+      defp prepare_query(query) do
+        conn = connection_pool!()
+
+        case DBConnection.prepare(conn, query) do
+          {:ok, query} -> {:ok, [conn, query, []]}
+          other -> other
+        end
+      end
+
+      defp connection_pool!() do
+        case Supervisor.which_children(__MODULE__) do
+          [{_, conn, _, [DBConnection]} | _] -> conn
+          [] -> raise "Please add #{__MODULE__} to application Supervision tree"
+        end
+      end
+    end
+  end
 
   def supported_versions(), do: @supported_versions
 
@@ -48,25 +130,6 @@ defmodule Neo4ex.Connector do
     {:ok, read_chunk([], socket)}
   rescue
     error -> {:error, error}
-  end
-
-  def start_link(opts) do
-    Supervisor.start_link(__MODULE__, opts, name: __MODULE__)
-  end
-
-  @impl true
-  def init(opts) do
-    opts = Keyword.merge(@connector_opts, opts)
-
-    children = [
-      %{
-        id: BoltProtocol,
-        start:
-          {DBConnection, :start_link, [BoltProtocol, [{:versions, @supported_versions} | opts]]}
-      }
-    ]
-
-    Supervisor.init(children, strategy: :one_for_one)
   end
 
   defp send_chunk(data, data_size, sock) do

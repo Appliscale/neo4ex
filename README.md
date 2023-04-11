@@ -10,6 +10,11 @@ Most popular engine for those is Neo4j thus this library focuses on providing fu
 
 Currently only simple quering using raw Cypher queries is implemented, but there are few items on the Roadmap.
 
+### Bolt_sips
+
+One may say "there is already a library for communication with Neo4j". They are right **BUT** first and foremost, `bolt_sips` is left unmaintained ([discussion](https://github.com/florinpatrascu/bolt_sips/issues/109)). There were few attempts to continue that, but last activity is from January 2023. Secondly, `bolt_sips` is just a driver. This library purpose will be to provide complete user experience when interacting with the DB. 
+This should be solved by building Ecto-like support for the Cypher query language.  
+
 ## Installation
 
 The package can be installed by adding `neo4ex` to your list of dependencies in `mix.exs`:
@@ -24,34 +29,43 @@ end
 
 ## Usage
 
-1. Define connection params in config
+Configuration is very similar to the Ecto, so the ones familiar with it should have no problem understanding it.
+
+1. Create module that will act as a connection process
 
     ```elixir
-    config :neo4ex, Neo4ex.Connector,
+    defmodule MyApp.Neo4jConnection do
+      use Neo4ex.Connector,
+        otp_app: :my_app
+    end
+    ```
+
+2. Define connection params in config
+
+    ```elixir
+    config :my_app, MyApp.Neo4jConnection,
       hostname: "localhost", # required
       port: 7687, # default
       principal: "neo4j", # optional
       credentials: "neo4j", # optional
     ```
 
-2. Add `Neo4ex.Connector` to your `application.ex`
+3. Add `MyApp.Neo4jConnection` to your `application.ex`
 
     ```elixir
     children = [
       # Starts the database connection pool
-      Neo4ex.Connector
+      MyApp.Neo4jConnection
     ]
     ```
 
-3. Query database using `Neo4ex.run/1` and `Neo4ex.Cypher.Query`
+4. Query database using `MyApp.Neo4jConnection.run/1` and `Neo4ex.Cypher.Query`
 
     ```elixir
-    Neo4ex.run(
+    MyApp.Neo4jConnection.run(
       %Neo4ex.Cypher.Query{query: "MATCH (n) RETURN n"}
     )
     ```
-
-    Keep in mind that Neo4j streams results, so the `run/1` function returns a `Stream` that has to be consumed.
 
 Ecto-like Cypher DSL is one of the things that are on the Roadmap
 

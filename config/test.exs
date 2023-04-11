@@ -1,6 +1,6 @@
 import Config
 
-config :neo4ex, Neo4ex.Connector,
+config :neo4ex, Neo4ex.Neo4jConnection,
   hostname: "localhost",
   principal: "neo4j",
   credentials: "letmein",

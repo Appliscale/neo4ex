@@ -78,7 +78,7 @@ defmodule Neo4ex.BoltProtocol do
     ) do
       {:ok, response, socket}
     else
-      {:ok, %Failure{} = failure} -> {failure, socket}
+      {:ok, %Failure{metadata: %{"message" => failure}}} -> {:disconnect, failure, socket}
       {:error, error} -> {:disconnect, error, socket}
     end
   end
@@ -91,7 +91,7 @@ defmodule Neo4ex.BoltProtocol do
     ) do
       {:ok, response, socket}
     else
-      {:ok, %Failure{} = failure} -> {failure, socket}
+      {:ok, %Failure{metadata: %{"message" => failure}}} -> {:disconnect, failure, socket}
       {:error, error} -> {:disconnect, error, socket}
     end
   end
@@ -104,18 +104,19 @@ defmodule Neo4ex.BoltProtocol do
     ) do
       {:ok, response, socket}
     else
-      {:ok, %Failure{} = failure} -> {failure, socket}
+      {:ok, %Failure{metadata: %{"message" => failure}}} -> {:disconnect, failure, socket}
       {:error, error} -> {:disconnect, error, socket}
     end
   end
 
   @impl true
-  def handle_close(query, _opts, state) do
+  def handle_prepare(query, _opts, state) do
+    # TODO: provide hints for the query
     {:ok, query, state}
   end
 
   @impl true
-  def handle_prepare(query, _opts, state) do
+  def handle_close(query, _opts, state) do
     {:ok, query, state}
   end
 
@@ -157,7 +158,7 @@ defmodule Neo4ex.BoltProtocol do
       pull_message <- %Pull{extra: %Extra.Pull{n: -1}},
       :ok <- Connector.send(pull_message, socket)
     ) do
-      {:ok, query, success, socket}
+      {:ok, query, success, %{socket | streaming: true}}
     else
       {:ok, %Failure{} = failure} -> {:error, failure, socket}
       {:error, error} -> {:disconnect, error, socket}
@@ -168,12 +169,18 @@ defmodule Neo4ex.BoltProtocol do
   def handle_fetch(_query, _cursor, _opts, socket) do
     case Connector.read(socket) do
       {:ok, %Record{data: data}} -> {:cont, data, socket}
-      {:ok, %Success{}} -> {:halt, nil, socket}
+      {:ok, %Success{}} -> {:halt, nil, %{socket | streaming: false}}
+      {:ok, %Failure{metadata: %{"message" => failure}}} -> {:error, failure, socket}
       {:error, exception} -> {:error, exception, socket}
     end
   end
 
   @impl true
+  def handle_deallocate(_query, _cursor, _opts, %{streaming: false} = state) do
+    # nothing to do here because we exhausted the stream
+    {:ok, nil, state}
+  end
+
   def handle_deallocate(_query, _cursor, _opts, socket) do
     # make sure we discard any unconsumed data
     message = %Discard{extra: %Extra.Pull{n: -1}}

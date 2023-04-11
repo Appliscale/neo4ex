@@ -29,5 +29,5 @@ defmodule Neo4ex.Connector.Socket do
   defdelegate close(sock), to: @transport_module
 
   @doc "Defines the state used by Protocol implementation"
-  defstruct [:sock, bolt_version: "0.0.0"]
+  defstruct [:sock, bolt_version: "0.0.0", streaming: false]
 end
