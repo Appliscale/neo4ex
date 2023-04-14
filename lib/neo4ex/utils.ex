@@ -56,14 +56,14 @@ defmodule Neo4ex.Utils do
     end
   end
 
-  def expand_dir(base, file) do
+  def require_modules(base, file) do
     path = Path.join(base, file)
 
     case File.dir?(path) do
       true ->
         path
         |> File.ls!()
-        |> Enum.flat_map(fn sub -> expand_dir(path, sub) end)
+        |> Enum.flat_map(fn sub -> require_modules(path, sub) end)
 
       false ->
         file =
@@ -81,8 +81,8 @@ defmodule Neo4ex.Utils do
   end
 
   def list_valid_versions(requirement) do
-    Neo4ex.Connector.supported_versions()
-    |> Enum.map(fn ver -> ver |> Float.to_string() |> Kernel.<>(".0") |> Version.parse!() end)
-    |> Enum.filter(fn ver -> Version.match?(ver, requirement) end)
+    Enum.filter(Neo4ex.Connector.supported_versions(), fn ver ->
+      Version.match?(ver, requirement)
+    end)
   end
 end

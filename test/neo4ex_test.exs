@@ -1,8 +1,12 @@
-defmodule Neo4ExTest do
+defmodule Neo4exTest do
   use ExUnit.Case
 
   import Mox
+  import Neo4ex.Neo4jConnection
 
+  alias Neo4ex.BoltProtocol.Structure.Message.Request.Begin
+  alias Neo4ex.BoltProtocol.Structure.Message.Request.Commit
+  alias Neo4ex.BoltProtocol.Structure.Message.Request.Rollback
   alias Neo4ex.Cypher.Query
   alias Neo4ex.Connector.SocketMock
   alias Neo4ex.BoltProtocol.Encoder
@@ -99,10 +103,42 @@ defmodule Neo4ExTest do
     end
   end
 
-  defp expect_message(mock, message) do
-    mock
-    |> expect(:recv, fn _, 2 -> {:ok, <<1::16>>} end)
-    |> expect(:recv, fn _, 1 -> {:ok, message} end)
-    |> expect(:recv, fn _, 2 -> {:ok, <<0::16>>} end)
+  describe "transaction/0" do
+    test "sends commit on success" do
+      message = %Success{}
+      encoded_success_message = Encoder.encode(message, "4.0.0")
+
+      begin = generate_message_chunk(%Begin{})
+      chunk = generate_message_chunk(%Commit{})
+
+      SocketMock
+      |> expect(:send, fn _, ^begin -> :ok end)
+      |> expect_message(encoded_success_message)
+      |> expect(:send, fn _, ^chunk -> :ok end)
+      |> expect_message(encoded_success_message)
+
+      Neo4ex.transaction(fn _ ->
+        :ok
+      end)
+    end
+
+    test "sends rollback on error" do
+      message = %Success{}
+      encoded_success_message = Encoder.encode(message, "4.0.0")
+
+      begin = generate_message_chunk(%Begin{})
+      chunk = generate_message_chunk(%Rollback{})
+
+      SocketMock
+      |> expect(:send, fn _, ^begin -> :ok end)
+      |> expect_message(encoded_success_message)
+      |> expect(:send, fn _, ^chunk -> :ok end)
+      |> expect_message(encoded_success_message)
+
+      assert {:error, :oops} =
+               Neo4ex.transaction(fn conn ->
+                 DBConnection.rollback(conn, :oops)
+               end)
+    end
   end
 end

@@ -18,8 +18,7 @@ defmodule Neo4ex.MixProject do
       test_coverage: [
         ignore_modules: [
           Neo4ex.BoltProtocol.Structure,
-          Neo4ex.PackStream.DecoderBuilder,
-          Neo4ex.PackStream.Exceptions.MarkersError
+          Neo4ex.PackStream.DecoderBuilder
         ],
         summary: [
           threshold: 80

@@ -63,6 +63,8 @@ defmodule Neo4ex.PackStream.EncoderTest do
 
     test "returns valid binary representation of Atoms" do
       assert <<0x85, "hello">> == Encoder.encode(:hello)
+      assert <<0xC3>> == Encoder.encode(true)
+      assert <<0xC2>> == Encoder.encode(false)
     end
 
     test "returns valid binary representation of Binaries" do

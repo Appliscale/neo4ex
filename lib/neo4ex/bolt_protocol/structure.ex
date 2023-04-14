@@ -140,7 +140,6 @@ defmodule Neo4ex.BoltProtocol.Structure do
 
       def get_tag(), do: unquote(tag)
 
-      # by default
       def version_requirement(), do: unquote(Macro.escape(requirement))
 
       def load(fields_values, bolt_version), do: do_load(fields_values, bolt_version)

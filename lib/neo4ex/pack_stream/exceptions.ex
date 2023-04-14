@@ -9,13 +9,4 @@ defmodule Neo4ex.PackStream.Exceptions do
       %EncodeError{message: msg}
     end
   end
-
-  defmodule MarkersError do
-    defexception [:message]
-    @impl true
-    def exception(value) do
-      msg = "Couldn't find markers for #{inspect(value)}"
-      %MarkersError{message: msg}
-    end
-  end
 end

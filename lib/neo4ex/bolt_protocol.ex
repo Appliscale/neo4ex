@@ -129,7 +129,7 @@ defmodule Neo4ex.BoltProtocol do
           |> Stream.transform(q, stream_transform(cursor, opts, sckt))
           |> Enum.to_list()
 
-        {:ok, q, result, sckt}
+        {:ok, q, result, %{sckt | streaming: false}}
 
       other ->
         other
@@ -207,13 +207,12 @@ defmodule Neo4ex.BoltProtocol do
     supported_versions =
       opts
       |> Keyword.get(:versions, [])
-      |> Enum.concat([0.0, 0.0, 0.0, 0.0])
+      |> Stream.concat(Stream.cycle(["0.0.0"]))
       |> Enum.take(4)
-      |> Enum.map(fn float ->
-        [major, minor] =
-          float |> Float.to_string() |> String.split(".") |> Enum.map(&String.to_integer/1)
+      |> Enum.map(fn version ->
+        [major, minor, range] = version |> String.split(".") |> Enum.map(&String.to_integer/1)
 
-        <<0::16, minor, major>>
+        <<0::8, range, minor, major>>
       end)
       |> IO.iodata_to_binary()
 

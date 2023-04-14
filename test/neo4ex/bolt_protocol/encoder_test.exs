@@ -17,6 +17,9 @@ defmodule Neo4ex.BoltProtocol.EncoderTest do
       assert <<0x93, 1, 0x81, "a", 0xC1, 0x4::4, 0x0::60>> ==
                Encoder.encode([1, "a", 2.0], "4.0.0")
 
+      assert <<0x92, 1, 0xB3, 0x4E, 0xC0, 0x90, 0xA0>> ==
+               Encoder.encode([1, %Node{}], "4.0.0")
+
       assert <<0xD4, 20, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20>> ==
                1..20 |> Enum.to_list() |> Encoder.encode("4.0.0")
     end
