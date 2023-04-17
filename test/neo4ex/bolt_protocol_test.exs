@@ -112,7 +112,7 @@ defmodule Neo4ex.BoltProtocolTest do
       # summary message
       |> expect_message(encoded_success_message)
 
-      assert {:ok, query, [["message"]], socket} ==
+      assert {:ok, query, [["message"], %Success{metadata: %{"t_first" => 1}}], socket} ==
                BoltProtocol.handle_execute(query, %{}, [], socket)
     end
 
@@ -133,6 +133,9 @@ defmodule Neo4ex.BoltProtocolTest do
       |> expect_message(encoded_message)
       # summary message
       |> expect(:recv, fn _, 2 -> {:error, :closed} end)
+      # deallocate (we haven't consumed whole stream)
+      |> expect(:send, fn _, _ -> :ok end)
+      |> expect_message(encoded_success_message)
 
       assert {:error, DBConnection.ConnectionError.exception(inspect(:closed)), socket} ==
                BoltProtocol.handle_execute(query, %{}, [], socket)

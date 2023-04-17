@@ -24,6 +24,7 @@ defmodule Neo4ex.Connector do
       use Supervisor
 
       @connector_opts Application.compile_env(unquote(app), __MODULE__, [])
+      @debug_queries Keyword.get(@connector_opts, :debug) == true
 
       def start_link(opts) do
         Supervisor.start_link(__MODULE__, opts, name: __MODULE__)
@@ -50,8 +51,8 @@ defmodule Neo4ex.Connector do
       This function always reads all data and returns a list of results.
       If you need more control, use `stream/2`.
       """
-      def run(%Cypher.Query{} = query) do
-        case prepare_query(query) do
+      def run(%Cypher.Query{} = query, opts \\ []) do
+        case prepare_query(query, opts) do
           {:ok, args} -> apply(DBConnection, :execute, args)
           other -> other
         end
@@ -62,9 +63,9 @@ defmodule Neo4ex.Connector do
       This function uses reducer to read data from stream.
       Reducer may finish prematurely. In that case, remaining part of the stream will be thrown away.
       """
-      def stream(%Cypher.Query{} = query, reducer) when is_function(reducer, 2) do
+      def stream(%Cypher.Query{} = query, reducer, opts \\ []) when is_function(reducer, 2) do
         with(
-          {:ok, [conn | args]} <- prepare_query(query),
+          {:ok, [conn | args]} <- prepare_query(query, opts),
           {:ok, stream} <-
             DBConnection.transaction(conn, fn conn ->
               # we have to consume stream within transaction
@@ -83,11 +84,12 @@ defmodule Neo4ex.Connector do
         DBConnection.transaction(conn, func)
       end
 
-      defp prepare_query(query) do
+      defp prepare_query(query, opts) do
         conn = connection_pool!()
+        opts = Keyword.merge([debug: @debug_queries], opts)
 
-        case DBConnection.prepare(conn, query) do
-          {:ok, query} -> {:ok, [conn, query, []]}
+        case DBConnection.prepare(conn, query, opts) do
+          {:ok, query} -> {:ok, [conn, query, opts]}
           other -> other
         end
       end

@@ -60,7 +60,41 @@ defmodule Neo4exTest do
       |> expect_message(encoded_success_message)
 
       q = %Query{}
-      assert {:ok, q, [["hello", "goodbye"], ["hello", "goodbye"]]} == Neo4ex.run(q)
+
+      assert {:ok, q,
+              [["hello", "goodbye"], ["hello", "goodbye"], %Success{metadata: %{"t_first" => 1}}]} ==
+               Neo4ex.run(q)
+    end
+
+    test "calls explain on query before sending when debug enabled" do
+      message = %Record{data: ["hello", "goodbye"]}
+      encoded_message = Encoder.encode(message, "4.0.0")
+      success_message = %Success{metadata: %{"t_first" => 1}}
+      encoded_success_message = Encoder.encode(success_message, "4.0.0")
+
+      SocketMock
+      # explain
+      |> expect(:send, fn _, _ -> :ok end)
+      |> expect_message(encoded_success_message)
+      |> expect(:send, fn _, _ -> :ok end)
+      |> expect_message(encoded_success_message)
+      # query
+      |> expect(:send, fn _, _ -> :ok end)
+      # pull results
+      |> expect(:send, fn _, _ -> :ok end)
+      # summary message
+      |> expect_message(encoded_success_message)
+      # detail message
+      |> expect_message(encoded_message)
+      |> expect_message(encoded_message)
+      # summary message
+      |> expect_message(encoded_success_message)
+
+      q = %Query{}
+
+      assert {:ok, q,
+              [["hello", "goodbye"], ["hello", "goodbye"], %Success{metadata: %{"t_first" => 1}}]} ==
+               Neo4ex.run(q, debug: true)
     end
   end
 

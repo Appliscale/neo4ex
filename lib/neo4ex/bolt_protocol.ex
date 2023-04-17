@@ -110,9 +110,21 @@ defmodule Neo4ex.BoltProtocol do
   end
 
   @impl true
-  def handle_prepare(query, _opts, state) do
-    # TODO: provide hints for the query
-    {:ok, query, state}
+  def handle_prepare(%Cypher.Query{query: cypher_query} = query, opts, socket) do
+    if Keyword.get(opts, :debug) do
+      %{query | query: "EXPLAIN #{cypher_query}"}
+      |> handle_execute(%{}, [], socket)
+      |> case do
+        {:ok, _, [%Success{metadata: %{"notifications" => notifications}}], _} -> notifications
+        _ -> []
+      end
+      |> Enum.each(fn %{"severity" => level, "description" => msg} ->
+        level = level |> String.downcase() |> String.to_atom()
+        Logger.log(level, msg)
+      end)
+    end
+
+    {:ok, query, socket}
   end
 
   @impl true
@@ -122,18 +134,28 @@ defmodule Neo4ex.BoltProtocol do
 
   @impl true
   def handle_execute(query, params, opts, %Socket{} = socket) do
-    case handle_declare(query, params, opts, socket) do
-      {:ok, q, cursor, sckt} ->
-        result =
-          Stream.cycle([0])
-          |> Stream.transform(q, stream_transform(cursor, opts, sckt))
-          |> Enum.to_list()
+    result =
+      Stream.resource(
+        fn -> handle_declare(query, params, opts, socket) end,
+        fn
+          {:ok, q, cursor, sckt} ->
+            case handle_fetch(q, cursor, opts, sckt) do
+              {:cont, data, sckt} -> {[data], {:ok, q, cursor, sckt}}
+              {:halt, success, sckt} -> {[success], {:halt, q, cursor, sckt}}
+              {:error, exception, _} -> raise exception
+            end
 
-        {:ok, q, result, %{sckt | streaming: false}}
+          {:halt, q, cursor, sckt} ->
+            {:halt, {:ok, q, cursor, sckt}}
 
-      other ->
-        other
-    end
+          other ->
+            raise other
+        end,
+        fn {_, q, cursor, sckt} -> handle_deallocate(q, cursor, opts, sckt) end
+      )
+      |> Enum.to_list()
+
+    {:ok, query, result, %{socket | streaming: false}}
   rescue
     ex -> {:error, ex, socket}
   end
@@ -166,13 +188,27 @@ defmodule Neo4ex.BoltProtocol do
   end
 
   @impl true
-  def handle_fetch(_query, _cursor, _opts, socket) do
+  def handle_fetch(_query, _cursor, _opts, %{streaming: true} = socket) do
+    socket_not_streaming = %{socket | streaming: false}
+
     case Connector.read(socket) do
-      {:ok, %Record{data: data}} -> {:cont, data, socket}
-      {:ok, %Success{}} -> {:halt, nil, %{socket | streaming: false}}
-      {:ok, %Failure{metadata: %{"message" => failure}}} -> {:error, failure, socket}
-      {:error, exception} -> {:error, exception, socket}
+      {:ok, %Record{data: data}} ->
+        {:cont, data, socket}
+
+      {:ok, %Success{} = success} ->
+        {:halt, success, socket_not_streaming}
+
+      {:ok, %Failure{metadata: %{"message" => failure}}} ->
+        {:error, failure, socket_not_streaming}
+
+      {:error, exception} ->
+        {:error, exception, socket_not_streaming}
     end
+  end
+
+  def handle_fetch(_query, _cursor, _opts, %{streaming: false} = state) do
+    # nothing to do here because we exhausted the stream
+    {:error, nil, state}
   end
 
   @impl true
@@ -281,16 +317,6 @@ defmodule Neo4ex.BoltProtocol do
         :ok
       else
         other -> other
-      end
-    end
-  end
-
-  defp stream_transform(cursor, opts, sckt) do
-    fn _, q ->
-      case handle_fetch(q, cursor, opts, sckt) do
-        {:cont, data, _} -> {[data], q}
-        {:halt, _, _} -> {:halt, q}
-        {:error, exception, _} -> raise exception
       end
     end
   end
