@@ -9,4 +9,9 @@ defmodule Neo4ex.PackStream.Exceptions do
       %EncodeError{message: msg}
     end
   end
+
+  defmodule SizeError do
+    defexception message:
+                   "Encoding is not supported for collections larger than 32-bit signed integer"
+  end
 end

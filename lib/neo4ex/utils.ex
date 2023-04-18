@@ -5,11 +5,18 @@ defmodule Neo4ex.Utils do
 
   alias Neo4ex.PackStream
   alias Neo4ex.PackStream.Markers
+  alias Neo4ex.PackStream.Exceptions
 
   @lib_dir File.cwd!() |> Path.join("lib")
+  # 32-bit signed integer
+  @max_enumerable_size 0x7FFFFFFF
 
   # binaries and lists share similar logic
   def enumerable_header(term_size, markers_type) do
+    if term_size > @max_enumerable_size do
+      raise Exceptions.SizeError
+    end
+
     byte_count = byte_size_for_integer(term_size, false)
     marker_index = if byte_count < 1, do: 0, else: ceil(byte_count)
     marker = markers_type |> Markers.get!() |> Enum.at(marker_index)
