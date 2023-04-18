@@ -23,7 +23,7 @@ defmodule Neo4ex.BoltProtocol.Decoder do
   __ENV__.file
   |> Path.dirname()
   |> Utils.require_modules("structure")
-  |> Enum.filter(fn module -> function_exported?(module, :get_tag, 0) end)
+  |> Enum.filter(fn module -> function_exported?(module, :version_requirement, 0) end)
   |> Enum.flat_map(fn module ->
     module.version_requirement()
     |> Utils.list_valid_versions()

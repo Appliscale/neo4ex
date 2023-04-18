@@ -161,6 +161,12 @@ defmodule Neo4ex.BoltProtocol do
   end
 
   @impl true
+  def handle_declare(_query, _params, _opts, %{streaming: true} = socket) do
+    {:error,
+     "Can't open second cursor on the same connection. Please read all data from previous cursor first.",
+     socket}
+  end
+
   def handle_declare(
         %Cypher.Query{query: cypher_query, params: params, opts: opts} = query,
         _params,
