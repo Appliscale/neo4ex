@@ -13,7 +13,7 @@ defmodule Neo4ex.ConnectorTest do
 
   setup do
     # fake socket
-    %{socket: %Connector.Socket{bolt_version: "4.3.0"}}
+    %{socket: %Connector.Socket{bolt_version: Version.parse!("4.3.0")}}
   end
 
   describe "send_noop/1" do

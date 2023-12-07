@@ -5,6 +5,10 @@ defmodule Neo4ex.BoltProtocol.Decoder do
   alias Neo4ex.Utils
   alias Neo4ex.PackStream.{Markers, Decoder}
 
+  @doc """
+  Although we support providing Bolt version as a string,
+  it's heavily discouraged because parsing version on each decode invocation takes relatively long time
+  """
   @spec decode(binary(), Version.version()) :: term()
   def decode(data, bolt_version) when is_binary(bolt_version) do
     bolt_version = Version.parse!(bolt_version)

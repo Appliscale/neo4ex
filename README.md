@@ -12,7 +12,7 @@ Currently only simple quering using raw Cypher queries is implemented, but there
 
 ### Bolt_sips
 
-One may say "there is already a library for communication with Neo4j". They are right **BUT** first and foremost, `bolt_sips` is left unmaintained ([discussion](https://github.com/florinpatrascu/bolt_sips/issues/109)). There were few attempts to continue that, but last activity is from January 2023. Secondly, `bolt_sips` is just a driver. This library purpose will be to provide complete user experience when interacting with the DB. 
+One may say "there is already a library for communication with Neo4j". They are right **BUT** first and foremost, `bolt_sips` is left unmaintained ([discussion](https://github.com/florinpatrascu/bolt_sips/issues/109)). There were few attempts to continue that, but there is still no library that would take advantage of Elixir structs, protocols and behaviours to provide robust extensibility. Secondly, `bolt_sips` is just a driver. This library purpose will be to provide complete user experience when interacting with the DB. 
 This should be solved by building Ecto-like support for the Cypher query language.  
 
 ## Installation
@@ -68,6 +68,16 @@ Configuration is very similar to the Ecto, so the ones familiar with it should h
     ```
 
 Ecto-like Cypher DSL is one of the things that are on the Roadmap
+
+## Example data
+This repository contains small app that starts Neo4ex connection and Neo4j server.
+After running `docker-compose up` go to the web interface (`http://localhost:7474`) and execute import command:
+```
+LOAD CSV WITH HEADERS FROM 'file:///example_data/customers-10000.csv' AS row
+CALL apoc.create.node(['Customer'], row) YIELD node
+RETURN node
+```
+After that you can start application located in `example_app` and play with the data.
 
 ## Roadmap
 

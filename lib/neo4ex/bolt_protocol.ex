@@ -26,7 +26,7 @@ defmodule Neo4ex.BoltProtocol do
     Goodbye
   }
 
-  alias Neo4ex.BoltProtocol.Structure.Message.Summary.{Success, Failure}
+  alias Neo4ex.BoltProtocol.Structure.Message.Summary.{Success, Ignored, Failure}
 
   @user_agent "Neo4ex/#{Application.spec(:neo4ex, :vsn)}"
 
@@ -113,7 +113,7 @@ defmodule Neo4ex.BoltProtocol do
   def handle_prepare(%Cypher.Query{query: cypher_query} = query, opts, socket) do
     if Keyword.get(opts, :debug) do
       %{query | query: "EXPLAIN #{cypher_query}"}
-      |> handle_execute(%{}, [], socket)
+      |> handle_execute(%{}, opts, socket)
       |> case do
         {:ok, _, [%Success{metadata: %{"notifications" => notifications}}], _} -> notifications
         _ -> []
@@ -142,22 +142,24 @@ defmodule Neo4ex.BoltProtocol do
             case handle_fetch(q, cursor, opts, sckt) do
               {:cont, data, sckt} -> {[data], {:ok, q, cursor, sckt}}
               {:halt, success, sckt} -> {[success], {:halt, q, cursor, sckt}}
-              {:error, exception, _} -> raise exception
+              other -> other
             end
 
           {:halt, q, cursor, sckt} ->
             {:halt, {:ok, q, cursor, sckt}}
 
           other ->
-            raise other
+            raise DBConnection.ConnectionError.exception(inspect(other))
         end,
-        fn {_, q, cursor, sckt} -> handle_deallocate(q, cursor, opts, sckt) end
+        fn
+          {_, q, cursor, sckt} -> handle_deallocate(q, cursor, opts, sckt)
+          # error scenario
+          _ -> :ok
+        end
       )
       |> Enum.to_list()
 
     {:ok, query, result, %{socket | streaming: false}}
-  rescue
-    ex -> {:error, ex, socket}
   end
 
   @impl true
