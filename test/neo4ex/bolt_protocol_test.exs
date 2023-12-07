@@ -116,7 +116,7 @@ defmodule Neo4ex.BoltProtocolTest do
                BoltProtocol.handle_execute(query, %{}, [], socket)
     end
 
-    test "returns error if stream gets interrupted", %{socket: socket, query: query} do
+    test "raises error if stream gets interrupted", %{socket: socket, query: query} do
       message = %Record{data: ["message"]}
       encoded_message = Encoder.encode(message, "4.0.0")
       success_message = %Success{metadata: %{"t_first" => 1}}
@@ -137,27 +137,24 @@ defmodule Neo4ex.BoltProtocolTest do
       |> expect(:send, fn _, _ -> :ok end)
       |> expect_message(encoded_success_message)
 
-      assert {:error, DBConnection.ConnectionError.exception(inspect(:closed)), socket} ==
-               BoltProtocol.handle_execute(query, %{}, [], socket)
+      assert_raise DBConnection.ConnectionError, fn ->
+        BoltProtocol.handle_execute(query, %{}, [], socket)
+      end
     end
 
-    test "returns error if stream returns failure", %{socket: socket, query: query} do
+    test "throws error if stream returns failure", %{socket: socket, query: query} do
       message = %Failure{metadata: %{"message" => "failure"}}
       encoded_failure_message = Encoder.encode(message, "4.0.0")
-      success_message = %Success{metadata: %{"t_first" => 1}}
-      encoded_success_message = Encoder.encode(success_message, "4.0.0")
 
       SocketMock
       # query
       |> expect(:send, fn _, _ -> :ok end)
-      # pull results
-      |> expect(:send, fn _, _ -> :ok end)
-      # summary message
-      |> expect_message(encoded_success_message)
       # summary message
       |> expect_message(encoded_failure_message)
 
-      assert {:error, query, [message], socket} == BoltProtocol.handle_execute(query, %{}, [], socket)
+      assert_raise DBConnection.ConnectionError, fn ->
+        BoltProtocol.handle_execute(query, %{}, [], socket)
+      end
     end
   end
 end

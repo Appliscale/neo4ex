@@ -22,7 +22,7 @@ defmodule ExampleApp do
     results
     |> Enum.reject(fn msg -> match?(%Success{}, msg) end)
     |> Enum.map(fn [%Node{properties: properties}] ->
-      properties = Map.new(properties, fn {k, v} -> {String.to_existing_atom(k), v} end)
+      properties = Map.new(properties, fn {k, v} -> {String.to_atom(k), v} end)
       struct(Customer, properties)
     end)
   end
@@ -38,7 +38,7 @@ defmodule ExampleApp do
     |> Connector.stream(fn msg, acc ->
       case msg do
         [%Node{properties: properties}] ->
-          properties = Map.new(properties, fn {k, v} -> {String.to_existing_atom(k), v} end)
+          properties = Map.new(properties, fn {k, v} -> {String.to_atom(k), v} end)
           {:cont, [struct(Customer, properties) | acc]}
 
         _ ->

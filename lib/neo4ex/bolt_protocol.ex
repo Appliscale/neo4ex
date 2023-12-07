@@ -26,7 +26,7 @@ defmodule Neo4ex.BoltProtocol do
     Goodbye
   }
 
-  alias Neo4ex.BoltProtocol.Structure.Message.Summary.{Success, Ignored, Failure}
+  alias Neo4ex.BoltProtocol.Structure.Message.Summary.{Success, Failure}
 
   @user_agent "Neo4ex/#{Application.spec(:neo4ex, :vsn)}"
 
@@ -142,7 +142,7 @@ defmodule Neo4ex.BoltProtocol do
             case handle_fetch(q, cursor, opts, sckt) do
               {:cont, data, sckt} -> {[data], {:ok, q, cursor, sckt}}
               {:halt, success, sckt} -> {[success], {:halt, q, cursor, sckt}}
-              other -> other
+              {:error, exception, _} -> raise exception
             end
 
           {:halt, q, cursor, sckt} ->
