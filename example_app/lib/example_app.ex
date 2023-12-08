@@ -34,17 +34,19 @@ defmodule ExampleApp do
     LIMIT 10
     """
 
-    %Cypher.Query{query: query, params: %{company: "Davenport Inc"}}
-    |> Connector.stream(fn msg, acc ->
-      case msg do
-        [%Node{properties: properties}] ->
-          properties = Map.new(properties, fn {k, v} -> {String.to_atom(k), v} end)
-          {:cont, [struct(Customer, properties) | acc]}
+    Connector.transaction(fn ->
+      %Cypher.Query{query: query, params: %{company: "Davenport Inc"}}
+      |> Connector.stream()
+      |> Enum.reduce_while([], fn msg, acc ->
+        case msg do
+          [%Node{properties: properties}] ->
+            properties = Map.new(properties, fn {k, v} -> {String.to_atom(k), v} end)
+            {:cont, [struct(Customer, properties) | acc]}
 
-        _ ->
-          {:halt, acc}
-      end
+          _ ->
+            {:halt, acc}
+        end
+      end)
     end)
-    |> Enum.to_list()
   end
 end

@@ -52,51 +52,49 @@ defmodule Neo4ex.Connector do
       If you need more control, use `stream/2`.
       """
       def run(%Cypher.Query{} = query, opts \\ []) do
-        case prepare_query(query, opts) do
-          {:ok, args} -> apply(DBConnection, :execute, args)
-          other -> other
+        with {:ok, args} <- prepare_query(query, opts) do
+          apply(DBConnection, :execute, args)
         end
       end
 
       @doc """
-      Executes Cypher query on the database and returns results.
-      This function uses reducer to read data from stream.
-      Reducer may finish prematurely. In that case, remaining part of the stream will be thrown away.
+      Returns lazy enumerable that emits all results matching given query.
+      It has to be ran inside transaction to read the data:
+      ```
+      stream = Connector.stream(query)
+      Connector.transaction(fn ->
+        Enum.to_list(stream)
+      end)
+      ```
       """
-      def stream(%Cypher.Query{} = query, reducer, opts \\ []) when is_function(reducer, 2) do
-        with(
-          {:ok, [conn | args]} <- prepare_query(query, opts),
-          {:ok, stream} <-
-            DBConnection.transaction(conn, fn conn ->
-              # we have to consume stream within transaction
-              DBConnection
-              |> apply(:stream, [conn | args])
-              |> Stream.reject(&is_nil/1)
-              |> Enum.reduce_while([], reducer)
-            end)
-        ) do
-          stream
-        end
+      def stream(%Cypher.Query{} = query, opts \\ []) do
+        pool = connection_pool!()
+        %Cypher.Stream{pool: pool, query: query}
+      end
+
+      def transaction(func) when is_function(func, 0) do
+        pool = connection_pool!()
+        Neo4ex.Connector.transaction(pool, [], fn _ -> func.() end)
       end
 
       def transaction(func) when is_function(func, 1) do
-        conn = connection_pool!()
-        DBConnection.transaction(conn, func)
+        pool = connection_pool!()
+        Neo4ex.Connector.transaction(pool, [], func)
       end
 
       defp prepare_query(query, opts) do
-        conn = connection_pool!()
+        pool = connection_pool!()
         opts = Keyword.merge([debug: @debug_queries], opts)
 
-        case DBConnection.prepare(conn, query, opts) do
-          {:ok, query} -> {:ok, [conn, query, opts]}
+        case DBConnection.prepare(pool, query, opts) do
+          {:ok, query} -> {:ok, [pool, query, opts]}
           other -> other
         end
       end
 
       defp connection_pool!() do
         case Supervisor.which_children(__MODULE__) do
-          [{_, conn, _, [DBConnection]} | _] -> conn
+          [{_, pool, _, [DBConnection]} | _] -> pool
           [] -> raise "Please add #{__MODULE__} to application Supervision tree"
         end
       end
@@ -111,6 +109,37 @@ defmodule Neo4ex.Connector do
         Version.parse!("#{major}.#{i}.0")
       end
     end)
+  end
+
+  @doc false
+  def transaction(pool, opts, callback) when is_function(callback, 1) do
+    checkout_or_transaction(:transaction, pool, opts, callback)
+  end
+
+  @doc false
+  def reduce(pool, query, params, opts, acc, fun) do
+    case get_conn(pool) do
+      %DBConnection{conn_mode: :transaction} = conn ->
+        DBConnection
+        |> apply(:stream, [conn, query, params, opts])
+        |> Enumerable.reduce(acc, fun)
+
+      _ ->
+        raise "cannot reduce stream outside of transaction"
+    end
+  end
+
+  @doc false
+  def into(pool, query, params, opts) do
+    case get_conn(pool) do
+      %DBConnection{conn_mode: :transaction} = conn ->
+        DBConnection
+        |> apply(:stream, [conn, query, params, opts])
+        |> Collectable.into()
+
+      _ ->
+        raise "cannot collect into stream outside of transaction"
+    end
   end
 
   def send_noop(%Socket{sock: sock}), do: Socket.send(sock, @noop)
@@ -172,4 +201,42 @@ defmodule Neo4ex.Connector do
         raise DBConnection.ConnectionError.exception(inspect(error))
     end
   end
+
+  ## Connection helpers
+
+  defp checkout_or_transaction(fun, pool, opts, callback) do
+    callback = fn conn ->
+      previous_conn = put_conn(pool, conn)
+
+      try do
+        callback.(conn)
+      after
+        reset_conn(pool, previous_conn)
+      end
+    end
+
+    apply(DBConnection, fun, [get_conn_or_pool(pool), callback, opts])
+  end
+
+  defp get_conn_or_pool(pool) do
+    Process.get(key(pool), pool)
+  end
+
+  defp get_conn(pool) do
+    Process.get(key(pool))
+  end
+
+  defp put_conn(pool, conn) do
+    Process.put(key(pool), conn)
+  end
+
+  defp reset_conn(pool, conn) do
+    if conn do
+      put_conn(pool, conn)
+    else
+      Process.delete(key(pool))
+    end
+  end
+
+  defp key(pool), do: {__MODULE__, pool}
 end

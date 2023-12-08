@@ -127,13 +127,15 @@ defmodule Neo4exTest do
       |> expect(:send, fn _, _ -> :ok end)
       |> expect_message(encoded_success_message)
 
-      q = %Query{}
+      stream = Neo4ex.stream(%Query{})
 
-      assert ["hello", "hello", "goodbye"] ==
-               Neo4ex.stream(q, fn x, acc ->
-                 # this will stop stream in the middle
-                 if acc == x, do: {:halt, [hd(x) | acc]}, else: {:cont, acc ++ x}
-               end)
+      Neo4ex.transaction(fn ->
+        assert ["hello", "hello", "goodbye"] ==
+                 Enum.reduce_while(stream, [], fn x, acc ->
+                   # this will stop stream in the middle
+                   if acc == x, do: {:halt, [hd(x) | acc]}, else: {:cont, acc ++ x}
+                 end)
+      end)
     end
   end
 
@@ -151,7 +153,7 @@ defmodule Neo4exTest do
       |> expect(:send, fn _, ^chunk -> :ok end)
       |> expect_message(encoded_success_message)
 
-      Neo4ex.transaction(fn _ ->
+      Neo4ex.transaction(fn ->
         :ok
       end)
     end
