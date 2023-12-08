@@ -1,4 +1,5 @@
 defmodule Neo4ex.Cypher.Stream do
+  @moduledoc false
   alias Neo4ex.Cypher.Query
 
   defstruct pool: nil, query: nil
