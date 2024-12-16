@@ -16,11 +16,13 @@ jobs:
 
     strategy:
       matrix:
-        iex: [1.15.8, 1.16.3, 1.17.3]
-        otp: [25.3, 26.2, 27.2]
+        iex: [1.15.8, 1.16.3]
+        otp: [25.3, 26.2]
         include:
           - iex: 1.14.5
             otp: 24.3.4
+          - iex: 1.17.3
+            otp: 27.2
 
     steps:
       - uses: actions/checkout@v3
