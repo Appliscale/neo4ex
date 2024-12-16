@@ -1,19 +1,17 @@
-defmodule Mix.Tasks.ExampleApp.BoltSipsBenchmark do
+defmodule Mix.Tasks.ExampleApp.BoltxBenchmark do
   use Mix.Task
 
   alias Neo4ex.Cypher
-
-  alias Bolt.Sips, as: Neo
 
   alias ExampleApp.Connector
 
   @requirements ["app.start"]
 
-  @shortdoc "Runs benchmark to compare with bolt_sips library"
+  @shortdoc "Runs benchmark to compare with boltx library"
   def run(_args) do
     Benchee.run(%{
       "Neo4ex" => fn -> neo4ex() end,
-      "Bolt.Sips" => fn -> bolt_sips() end
+      "Boltx" => fn -> boltx() end
     })
   end
 
@@ -22,9 +20,9 @@ defmodule Mix.Tasks.ExampleApp.BoltSipsBenchmark do
     Connector.run(%Cypher.Query{query: query, params: params})
   end
 
-  def bolt_sips() do
+  def boltx() do
     %{query: query, params: params} = customer_query()
-    Neo.query!(Neo.conn(), query, params)
+    Boltx.query!(Boltx, query, params)
   end
 
   def customer_query() do

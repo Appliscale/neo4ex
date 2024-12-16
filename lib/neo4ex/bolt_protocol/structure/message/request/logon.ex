@@ -1,12 +1,9 @@
 defmodule Neo4ex.BoltProtocol.Structure.Message.Request.Logon do
   use Neo4ex.BoltProtocol.Structure
 
-  # TODO: implement validation
-  # @predefined_schemes ~w(none basic bearer kerberos)
+  alias Neo4ex.BoltProtocol.Structure.Message.Extra
 
   structure 0x6A do
-    field(:scheme, default: "")
-    field(:principal, default: "")
-    field(:credentials, default: "")
+    field(:auth, default: %Extra.Logon{})
   end
 end

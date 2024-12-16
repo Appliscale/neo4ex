@@ -40,7 +40,7 @@ defmodule Neo4ex.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:db_connection, "~> 2.4"},
+      {:db_connection, "~> 2.6.0"},
 
       # Tests
       {:mox, "~> 1.0", only: [:test]},

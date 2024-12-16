@@ -23,7 +23,7 @@ defmodule Neo4exTest do
     encoded_success_message = Encoder.encode(success_message, "4.0.0")
 
     SocketMock
-    |> expect(:connect, fn 'localhost', 7687, [:binary, {:active, false}] ->
+    |> expect(:connect, fn ~c"localhost", 7687, [:binary, {:active, false}] ->
       :gen_tcp.listen(0, [:binary])
     end)
     # handshake

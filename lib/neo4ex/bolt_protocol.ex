@@ -28,8 +28,6 @@ defmodule Neo4ex.BoltProtocol do
 
   alias Neo4ex.BoltProtocol.Structure.Message.Summary.{Success, Failure}
 
-  @user_agent "Neo4ex/#{Application.spec(:neo4ex, :vsn)}"
-
   @impl true
   def connect(opts) do
     hostname = Keyword.get(opts, :hostname)
@@ -42,7 +40,11 @@ defmodule Neo4ex.BoltProtocol do
          :ok <- hello(socket, opts) do
       {:ok, socket}
     else
-      other -> other
+      {:ok, %Failure{metadata: %{"message" => failure}}} ->
+        {:error, failure}
+
+      other ->
+        other
     end
   end
 
@@ -290,12 +292,14 @@ defmodule Neo4ex.BoltProtocol do
       end
 
     if Version.match?(bolt_version, ">= 5.1.0") do
-      hello = %Hello{extra: %Extra.Hello{user_agent: @user_agent}}
+      hello = %Hello{extra: %Extra.Hello{}}
 
       logon = %Logon{
-        scheme: scheme,
-        principal: principal,
-        credentials: credentials
+        auth: %Extra.Logon{
+          scheme: scheme,
+          principal: principal,
+          credentials: credentials
+        }
       }
 
       with(
@@ -311,7 +315,6 @@ defmodule Neo4ex.BoltProtocol do
     else
       message = %Hello{
         extra: %Extra.Hello{
-          user_agent: @user_agent,
           scheme: scheme,
           principal: principal,
           credentials: credentials
