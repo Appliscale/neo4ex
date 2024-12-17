@@ -47,7 +47,7 @@ defmodule Neo4ex.MixProject do
 
       # Linting
       {:credo, "~> 1.6.7", only: [:dev]},
-      {:dialyxir, "~> 1.2.0", only: [:dev], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev], runtime: false},
 
       # Documentation
       # Run with: `mix docs`
