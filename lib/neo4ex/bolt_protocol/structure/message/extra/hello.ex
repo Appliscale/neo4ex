@@ -2,7 +2,6 @@ defmodule Neo4ex.BoltProtocol.Structure.Message.Extra.Hello do
   use Neo4ex.BoltProtocol.Structure
 
   @version Mix.Project.config()[:version]
-  @system_info System.build_info()[:version]
 
   # can't be encoded directly, it's just helper for the Hello message
   embeded_structure do
@@ -11,7 +10,7 @@ defmodule Neo4ex.BoltProtocol.Structure.Message.Extra.Hello do
     field(:bolt_agent,
       default: %{
         product: "Neo4ex/#{@version}",
-        language: "Elixir/#{@system_info}"
+        language: "Elixir/#{System.build_info()[:version]}"
       },
       version: ">= 5.3.0"
     )
