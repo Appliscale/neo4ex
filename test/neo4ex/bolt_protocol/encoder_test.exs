@@ -1,6 +1,7 @@
 defmodule Neo4ex.BoltProtocol.EncoderTest do
   use ExUnit.Case, async: true
 
+  alias Neo4ex.BoltProtocol.Decoder
   alias Neo4ex.BoltProtocol.Structure.Graph.Relationship
   alias Neo4ex.BoltProtocol.Structure.Graph.Node
   alias Neo4ex.BoltProtocol.Structure.Graph.Legacy.DateTimeZoneId
@@ -80,43 +81,39 @@ defmodule Neo4ex.BoltProtocol.EncoderTest do
     end
 
     test "handles encoding of Hello messages" do
-      app_version = "Neo4ex/#{@version}"
-      user_agent_bytes = byte_size("user_agent")
-      ua_bytes = byte_size(app_version)
-      scheme_bytes = byte_size("scheme")
-      none_bytes = byte_size("none")
-      principal_bytes = byte_size("principal")
-      credentials_bytes = byte_size("credentials")
+      bolt_version = "4.0.0"
+      # we can't match on every posible key order for generic maps (too many cases)
+      encoded = Encoder.encode(%Hello{extra: %Extra.Hello{scheme: "none"}}, bolt_version)
+      decoded = encoded |> Decoder.decode(bolt_version) |> Enum.take(1) |> hd()
 
-      # even though Logon is a struct with prefdefined fields order, prior to 5.1 we're encoding it to the map so the keys will be sent according to map keys rules (compiler-defined, should be the same but can be random)
-      assert <<0xB1, 0x01, 0xA4, 0x8::4, ^scheme_bytes::4, "scheme", 0x8::4, ^none_bytes::4,
-               "none", 0x8::4, ^credentials_bytes::4, "credentials", 0x80, 0x8::4,
-               ^user_agent_bytes::4, "user_agent", 0x8::4, ^ua_bytes::4, ^app_version::binary,
-               0x8::4, ^principal_bytes::4, "principal",
-               0x80>> =
-               Encoder.encode(%Hello{extra: %Extra.Hello{scheme: "none"}}, "4.0.0")
+      # Extra.Hello is embedded meaning it has no signature on the engine side
+      assert decoded == %Hello{
+               extra: %{
+                 "user_agent" => "Neo4ex/#{@version}",
+                 "scheme" => "none",
+                 "credentials" => "",
+                 "principal" => ""
+               }
+             }
     end
 
     test "handles encoding of Hello messages for >= 5.3" do
-      app_version = "Neo4ex/#{@version}"
-      elixir_version = "Elixir/#{System.build_info()[:version]}"
-      user_agent_bytes = byte_size("user_agent")
-      ua_bytes = byte_size(app_version)
-      routing_bytes = byte_size("routing")
-      bolt_agent_bytes = byte_size("bolt_agent")
-      bolt_agent_product_bytes = byte_size("product")
-      bolt_agent_language_bytes = byte_size("language")
-      bolt_agent_language_value_bytes = byte_size(elixir_version)
+      bolt_version = "5.3.0"
+      # we can't match on every posible key order for generic maps (too many cases)
+      encoded = Encoder.encode(%Hello{extra: %Extra.Hello{}}, bolt_version)
+      decoded = encoded |> Decoder.decode(bolt_version) |> Enum.take(1) |> hd()
 
-      # even though Logon is a struct with prefdefined fields order, prior to 5.1 we're encoding it to the map so the keys will be sent according to map keys rules (compiler-defined, should be the same but can be random)
-      assert <<0xB1, 0x01, 0xA3, 0x8::4, ^routing_bytes::4, "routing", 0xA0, 0x8::4,
-               ^user_agent_bytes::4, "user_agent", 0x8::4, ^ua_bytes::4, ^app_version::binary,
-               0x8::4, ^bolt_agent_bytes::4, "bolt_agent", 0xA2, 0x8::4,
-               ^bolt_agent_product_bytes::4, "product", 0x8::4, ^ua_bytes::4,
-               ^app_version::binary, 0x8::4, ^bolt_agent_language_bytes::4, "language", 0x8::4,
-               ^bolt_agent_language_value_bytes::4,
-               ^elixir_version::binary>> =
-               Encoder.encode(%Hello{extra: %Extra.Hello{}}, "5.3.0")
+      # Extra.Hello is embedded meaning it has no signature on the engine side
+      assert decoded == %Hello{
+               extra: %{
+                 "user_agent" => "Neo4ex/#{@version}",
+                 "bolt_agent" => %{
+                   "language" => "Elixir/#{System.build_info()[:version]}",
+                   "product" => "Neo4ex/#{@version}"
+                 },
+                 "routing" => %{}
+               }
+             }
     end
   end
 end
