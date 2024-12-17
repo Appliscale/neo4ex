@@ -29,6 +29,7 @@ jobs:
 
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
+        id: beam
         with:
           elixir-version: ${{ matrix.iex }}
           otp-version: ${{ matrix.otp }}

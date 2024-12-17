@@ -46,7 +46,7 @@ defmodule Neo4ex.MixProject do
       {:mox, "~> 1.0", only: [:test]},
 
       # Linting
-      {:credo, "~> 1.6.7", only: [:dev]},
+      {:credo, "~> 1.6", only: [:dev]},
       {:dialyxir, "~> 1.4", only: [:dev], runtime: false},
 
       # Documentation
