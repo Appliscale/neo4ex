@@ -17,7 +17,7 @@ defmodule Neo4ex.MixProject do
       docs: docs(),
       test_coverage: [
         ignore_modules: [
-          Neo4ex.BoltProtocol.Structure,
+          ~r/^Neo4ex.BoltProtocol.Structure/,
           Neo4ex.PackStream.DecoderBuilder
         ],
         summary: [
