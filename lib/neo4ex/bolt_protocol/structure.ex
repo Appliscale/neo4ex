@@ -82,10 +82,11 @@ defmodule Neo4ex.BoltProtocol.Structure do
   defp build_fields_list(block) do
     block
     |> Macro.prewalk([], fn
-      {:field, _, [name, opts]}, acc ->
+      {:field, _, [name | opts]}, acc ->
         opts =
-          Keyword.update(
-            opts,
+          opts
+          |> List.flatten()
+          |> Keyword.update(
             :version,
             quote(do: Version.parse_requirement!(">= 0.0.0")),
             fn requirement ->

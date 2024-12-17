@@ -4,6 +4,9 @@ defmodule Neo4ex.BoltProtocolTest do
   import Mox
   import Neo4ex.Neo4jConnection
 
+  alias Neo4ex.BoltProtocol.Structure.Message.Extra
+  alias Neo4ex.BoltProtocol.Structure.Message.Request.Logon
+  alias Neo4ex.BoltProtocol.Structure.Message.Request.Hello
   alias Neo4ex.BoltProtocol.Structure.Message.Request.Rollback
   alias Neo4ex.BoltProtocol.Structure.Message.Request.Commit
   alias Neo4ex.BoltProtocol.Structure.Message.Request.Begin
@@ -22,6 +25,75 @@ defmodule Neo4ex.BoltProtocolTest do
     query = %Cypher.Query{query: "testing...123"}
     # fake socket
     %{socket: %Socket{bolt_version: Version.parse!("4.3.0")}, query: query}
+  end
+
+  describe "connect/1" do
+    test "properly negotiates version" do
+      success_message = %Success{}
+      encoded_success_message = Encoder.encode(success_message, "4.0.0")
+
+      # two versions, 4.0.0 and 0.0.0 x 3 (client always sends 4 versions)
+      handshake =
+        <<0x60, 0x60, 0xB0, 0x17, 0::8, 0::8, 0::8, 4::8, 0::96>>
+
+      hello = generate_message_chunk(%Hello{extra: %Extra.Hello{scheme: "none"}}, "4.0.0")
+
+      SocketMock
+      |> expect(:connect, fn ~c"noop", 7687, [:binary, {:active, false}] -> {:ok, nil} end)
+      |> expect(:send, fn _, ^handshake -> :ok end)
+      |> expect(:recv, fn _, 4 -> {:ok, <<0::16, 0::8, 4::8>>} end)
+      |> expect(:send, fn _, ^hello -> :ok end)
+      |> expect_message(encoded_success_message)
+
+      assert {:ok, %Socket{bolt_version: %Version{major: 4, minor: 0, patch: 0}}} ==
+               BoltProtocol.connect(hostname: "noop", versions: ["4.0.0"])
+
+      encoded_success_message = Encoder.encode(success_message, "5.3.0")
+
+      # two versions, 5.3.0 and 0.0.0 x 3 (client always sends 4 versions)
+      handshake =
+        <<0x60, 0x60, 0xB0, 0x17, 0::8, 0::8, 3::8, 5::8, 0::96>>
+
+      hello = generate_message_chunk(%Hello{}, "5.3.0")
+
+      logon =
+        generate_message_chunk(
+          %Logon{auth: %Extra.Logon{scheme: "bearer", credentials: "abc"}},
+          "5.3.0"
+        )
+
+      SocketMock
+      |> expect(:connect, fn ~c"noop", 7687, [:binary, {:active, false}] -> {:ok, nil} end)
+      |> expect(:send, fn _, ^handshake -> :ok end)
+      |> expect(:recv, fn _, 4 -> {:ok, <<0::16, 3::8, 5::8>>} end)
+      |> expect(:send, fn _, ^hello -> :ok end)
+      |> expect_message(encoded_success_message)
+      |> expect(:send, fn _, ^logon -> :ok end)
+      |> expect_message(encoded_success_message)
+
+      assert {:ok, %Socket{bolt_version: %Version{major: 5, minor: 3, patch: 0}}} ==
+               BoltProtocol.connect(hostname: "noop", versions: ["5.3.0"], credentials: "abc")
+    end
+
+    test "gracefully handles failures" do
+      message = %Failure{metadata: %{"message" => "failure"}}
+      encoded_failure_message = Encoder.encode(message, "5.3.0")
+
+      # two versions, 5.3.0 and 0.0.0 x 3 (client always sends 4 versions)
+      handshake =
+        <<0x60, 0x60, 0xB0, 0x17, 0::8, 0::8, 3::8, 5::8, 0::96>>
+
+      hello = generate_message_chunk(%Hello{}, "5.3.0")
+
+      SocketMock
+      |> expect(:connect, fn ~c"noop", 7687, [:binary, {:active, false}] -> {:ok, nil} end)
+      |> expect(:send, fn _, ^handshake -> :ok end)
+      |> expect(:recv, fn _, 4 -> {:ok, <<0::16, 3::8, 5::8>>} end)
+      |> expect(:send, fn _, ^hello -> :ok end)
+      |> expect_message(encoded_failure_message)
+
+      assert {:error, "failure"} == BoltProtocol.connect(hostname: "noop", versions: ["5.3.0"])
+    end
   end
 
   describe "disconnect/2" do

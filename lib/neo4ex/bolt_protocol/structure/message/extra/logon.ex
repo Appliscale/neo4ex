@@ -5,8 +5,8 @@ defmodule Neo4ex.BoltProtocol.Structure.Message.Extra.Logon do
   # @predefined_schemes ~w(none basic bearer kerberos)
 
   embeded_structure do
-    field(:scheme, default: "")
-    field(:principal, default: "")
-    field(:credentials, default: "")
+    field(:scheme)
+    field(:principal)
+    field(:credentials)
   end
 end

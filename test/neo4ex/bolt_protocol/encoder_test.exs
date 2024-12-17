@@ -91,8 +91,8 @@ defmodule Neo4ex.BoltProtocol.EncoderTest do
                extra: %{
                  "user_agent" => "Neo4ex/#{@version}",
                  "scheme" => "none",
-                 "credentials" => "",
-                 "principal" => ""
+                 "credentials" => nil,
+                 "principal" => nil
                }
              }
     end

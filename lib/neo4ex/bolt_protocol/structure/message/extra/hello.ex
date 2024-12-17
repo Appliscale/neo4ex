@@ -20,8 +20,8 @@ defmodule Neo4ex.BoltProtocol.Structure.Message.Extra.Hello do
     field(:routing, default: %{}, version: ">= 4.1.0")
 
     # prior to v5.1, authentication is handled inside HELLO message
-    field(:scheme, default: "", version: "< 5.1.0")
-    field(:principal, default: "", version: "< 5.1.0")
-    field(:credentials, default: "", version: "< 5.1.0")
+    field(:scheme, version: "< 5.1.0")
+    field(:principal, version: "< 5.1.0")
+    field(:credentials, version: "< 5.1.0")
   end
 end
