@@ -30,7 +30,7 @@ defmodule Mix.Tasks.ExampleApp.BoltxBenchmark do
     MATCH (customer)
     RETURN customer, rand() as r
     ORDER BY r
-    LIMIT 10
+    LIMIT 100
     """
 
     %{query: query, params: %{}}

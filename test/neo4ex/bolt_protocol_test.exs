@@ -33,8 +33,7 @@ defmodule Neo4ex.BoltProtocolTest do
       encoded_success_message = Encoder.encode(success_message, "4.0.0")
 
       # two versions, 4.0.0 and 0.0.0 x 3 (client always sends 4 versions)
-      handshake =
-        <<0x60, 0x60, 0xB0, 0x17, 0::8, 0::8, 0::8, 4::8, 0::96>>
+      handshake = <<0x60, 0x60, 0xB0, 0x17, 0::8, 0::8, 0::8, 4::8, 0::96>>
 
       hello = generate_message_chunk(%Hello{extra: %Extra.Hello{scheme: "none"}}, "4.0.0")
 
@@ -51,8 +50,7 @@ defmodule Neo4ex.BoltProtocolTest do
       encoded_success_message = Encoder.encode(success_message, "5.3.0")
 
       # two versions, 5.3.0 and 0.0.0 x 3 (client always sends 4 versions)
-      handshake =
-        <<0x60, 0x60, 0xB0, 0x17, 0::8, 0::8, 3::8, 5::8, 0::96>>
+      handshake = <<0x60, 0x60, 0xB0, 0x17, 0::8, 0::8, 3::8, 5::8, 0::96>>
 
       hello = generate_message_chunk(%Hello{}, "5.3.0")
 
@@ -80,8 +78,7 @@ defmodule Neo4ex.BoltProtocolTest do
       encoded_failure_message = Encoder.encode(message, "5.3.0")
 
       # two versions, 5.3.0 and 0.0.0 x 3 (client always sends 4 versions)
-      handshake =
-        <<0x60, 0x60, 0xB0, 0x17, 0::8, 0::8, 3::8, 5::8, 0::96>>
+      handshake = <<0x60, 0x60, 0xB0, 0x17, 0::8, 0::8, 3::8, 5::8, 0::96>>
 
       hello = generate_message_chunk(%Hello{}, "5.3.0")
 

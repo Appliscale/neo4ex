@@ -1,7 +1,6 @@
 defmodule Neo4ex.BoltProtocol.EncoderTest do
   use ExUnit.Case, async: true
 
-  alias Neo4ex.BoltProtocol.Decoder
   alias Neo4ex.BoltProtocol.Structure.Graph.Relationship
   alias Neo4ex.BoltProtocol.Structure.Graph.Node
   alias Neo4ex.BoltProtocol.Structure.Graph.Legacy.DateTimeZoneId
@@ -9,6 +8,7 @@ defmodule Neo4ex.BoltProtocol.EncoderTest do
   alias Neo4ex.BoltProtocol.Structure.Message.Extra
 
   alias Neo4ex.BoltProtocol.Encoder
+  alias Neo4ex.BoltProtocol.Decoder
   alias Neo4ex.PackStream.Exceptions
 
   @version Mix.Project.config()[:version]
