@@ -15,7 +15,7 @@ defmodule Neo4ex.Connector do
   @noop <<0::size(@chunk_size)>>
   # since 4.3 there is support for version range during negotiation
   # so "4.4.1" actually means "4.4" plus one previous version "4.3"
-  @supported_versions ["4.4.1", "4.2.0", "4.1.0", "4.0.0"]
+  @supported_versions ["5.20.20", "4.4.3", "4.2.0", "4.0.0"]
 
   defmacro __using__(otp_app: app) do
     supported_versions = @supported_versions
@@ -101,14 +101,17 @@ defmodule Neo4ex.Connector do
     end
   end
 
-  def supported_versions() do
-    Enum.flat_map(@supported_versions, fn version ->
+  defmacro supported_versions() do
+    @supported_versions
+    |> Enum.flat_map(fn version ->
       [major, minor, range] = version |> String.split(".") |> Enum.map(&String.to_integer/1)
 
       for i <- minor..(minor - range) do
         Version.parse!("#{major}.#{i}.0")
       end
     end)
+    |> Enum.uniq()
+    |> Macro.escape()
   end
 
   @doc false

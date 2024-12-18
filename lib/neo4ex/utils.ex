@@ -1,6 +1,8 @@
 defmodule Neo4ex.Utils do
   @moduledoc false
 
+  import Neo4ex.Connector, only: [supported_versions: 0]
+
   alias Neo4ex.BoltProtocol
 
   alias Neo4ex.PackStream
@@ -88,7 +90,7 @@ defmodule Neo4ex.Utils do
   end
 
   def list_valid_versions(requirement) do
-    Enum.filter(Neo4ex.Connector.supported_versions(), fn ver ->
+    Enum.filter(supported_versions(), fn ver ->
       Version.match?(ver, requirement)
     end)
   end

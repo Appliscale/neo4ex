@@ -6,8 +6,11 @@ config :example_app, ExampleApp.Connector,
   credentials: "letmein",
   pool_size: 1
 
-config :bolt_sips, Bolt,
-  url: "bolt://localhost:7687",
-  basic_auth: [username: "neo4j", password: "letmein"],
+config :boltx, Bolt,
+  uri: "bolt://localhost:7687",
+  auth: [username: "neo4j", password: "letmein"],
+  user_agent: "boltxTest/1",
   pool_size: 1,
-  max_overflow: 0
+  max_overflow: 0,
+  prefix: :default,
+  name: Boltx

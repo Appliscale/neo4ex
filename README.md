@@ -10,10 +10,14 @@ Most popular engine for those is Neo4j thus this library focuses on providing fu
 
 Currently only simple quering using raw Cypher queries is implemented, but there are few items on the Roadmap.
 
-### Bolt_sips
+## Existing libraries
 
-One may say "there is already a library for communication with Neo4j". They are right **BUT** first and foremost, `bolt_sips` is left unmaintained ([discussion](https://github.com/florinpatrascu/bolt_sips/issues/109)). There were few attempts to continue that, but there is still no library that would take advantage of Elixir structs, protocols and behaviours to provide robust extensibility. Secondly, `bolt_sips` is just a driver. This library purpose will be to provide complete user experience when interacting with the DB. 
+There were already few attempts to write a driver for Bolt protocol but all of them seem to be clumsy in terms of protocol logic - many things are "hardcoded" as in the docs instead of being thought out for the server's operation and coding a reusable solution. They are not taking advantage of Elixir structs, protocols and behaviours to provide robust extensibility.  
+Secondly, those libs are just a driver and this library purpose is to provide complete user experience when interacting with the DB.  
 This should be solved by building Ecto-like support for the Cypher query language.  
+
+At this point, it's worth noting that this library may not be faster than `bolt_sips` or `boltx` due to greater usage of Protocols and structs.  
+You can modify tasks from `example_app` to benchmark those on your data.
 
 ## Installation
 

@@ -82,10 +82,11 @@ defmodule Neo4ex.BoltProtocol.Structure do
   defp build_fields_list(block) do
     block
     |> Macro.prewalk([], fn
-      {:field, _, [name, opts]}, acc ->
+      {:field, _, [name | opts]}, acc ->
         opts =
-          Keyword.update(
-            opts,
+          opts
+          |> List.flatten()
+          |> Keyword.update(
             :version,
             quote(do: Version.parse_requirement!(">= 0.0.0")),
             fn requirement ->
@@ -152,6 +153,11 @@ defmodule Neo4ex.BoltProtocol.Structure do
 
   # embedded structure must be a map but we should take advantage of field versioning
   defp embedded_encoder_protocol(fields_list) do
+    # When default values contain some data from module (like values from attributes) it won't be visible inside defimpl (different module)
+    # For protocol we need only version so this is completely fine
+    fields_list =
+      Enum.map(fields_list, fn {field, opts} -> {field, [version: opts[:version]]} end)
+
     quote location: :keep do
       defimpl Neo4ex.BoltProtocol.Encoder do
         def encode(struct, bolt_version) do
@@ -169,6 +175,11 @@ defmodule Neo4ex.BoltProtocol.Structure do
   end
 
   defp encoder_protocol(fields_list) do
+    # When default values contain some data from module (like values from attributes) it won't be visible inside defimpl (different module)
+    # For protocol we need only version so this is completely fine
+    fields_list =
+      Enum.map(fields_list, fn {field, opts} -> {field, [version: opts[:version]]} end)
+
     quote location: :keep do
       defimpl Neo4ex.BoltProtocol.Encoder do
         alias Neo4ex.PackStream.{Markers, Exceptions}

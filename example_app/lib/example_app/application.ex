@@ -9,7 +9,7 @@ defmodule ExampleApp.Application do
   def start(_type, _args) do
     children = [
       ExampleApp.Connector,
-      {Bolt.Sips, Application.get_env(:bolt_sips, Bolt)}
+      {Boltx, Application.get_env(:boltx, Bolt)}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

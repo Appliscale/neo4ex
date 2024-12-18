@@ -19,9 +19,11 @@ defmodule Neo4ex.UtilsTest do
 
   describe "list_valid_versions/1" do
     test "filters invalid versions" do
-      assert [] == Utils.list_valid_versions(">= 5.0.0")
+      assert Enum.map(20..0//-1, fn minor -> Version.parse!("5.#{minor}.0") end) ==
+               Utils.list_valid_versions(">= 5.0.0")
 
-      assert [Version.parse!("4.4.0"), Version.parse!("4.3.0")] ==
+      assert Enum.map(20..0//-1, fn minor -> Version.parse!("5.#{minor}.0") end) ++
+               [Version.parse!("4.4.0"), Version.parse!("4.3.0")] ==
                Utils.list_valid_versions(">= 4.3.0")
     end
   end

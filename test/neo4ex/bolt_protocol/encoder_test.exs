@@ -8,7 +8,10 @@ defmodule Neo4ex.BoltProtocol.EncoderTest do
   alias Neo4ex.BoltProtocol.Structure.Message.Extra
 
   alias Neo4ex.BoltProtocol.Encoder
+  alias Neo4ex.BoltProtocol.Decoder
   alias Neo4ex.PackStream.Exceptions
+
+  @version Mix.Project.config()[:version]
 
   describe "encode/2" do
     test "returns valid binary representation of Lists" do
@@ -25,8 +28,30 @@ defmodule Neo4ex.BoltProtocol.EncoderTest do
     end
 
     test "returns valid binary representation of Maps" do
-      assert <<0xA3, 0x81, "a", 1, 0x81, "b", 0x81, "a", 0x81, "c", 0xC1, 0x4::4, 0x0::60>> ==
-               Encoder.encode(%{a: 1, b: "a", c: 2.0}, "4.0.0")
+      input = %{a: 1, b: "a", c: 2.0}
+
+      # assert <<0xA3, 0x81, "a", 1, 0x81, "b", 0x81, "a", 0x81, "c", 0xC1, 0x4::4, 0x0::60>> ==
+      #          Encoder.encode(%{a: 1, b: "a", c: 2.0}, "4.0.0")
+
+      # Keys in maps aren't sorted in newest OTP. We have to pattern match on each possible sorting (assuming the same kinds of values will be kept together, so the order is string,string,float or float,string,string)
+      case Encoder.encode(input, "4.0.0") do
+        <<0xA3, 0x81, "a", 1, 0x81, "b", 0x81, "a", 0x81, "c", 0xC1, 0x4::4, 0x0::60>> ->
+          :ok
+
+        <<0xA3, 0x81, "b", 0x81, "a", 0x81, "a", 1, 0x81, "c", 0xC1, 0x4::4, 0x0::60>> ->
+          :ok
+
+        <<0xA3, 0x81, "c", 0xC1, 0x4::4, 0x0::60, 0x81, "a", 1, 0x81, "b", 0x81, "a">> ->
+          :ok
+
+        <<0xA3, 0x81, "c", 0xC1, 0x4::4, 0x0::60, 0x81, "b", 0x81, "a", 0x81, "a", 1>> ->
+          :ok
+
+        other ->
+          flunk(
+            "Got invalid encoding for map: #{inspect(input)}, the result was: #{inspect(other)}"
+          )
+      end
     end
 
     test "handles encoding of Node structures" do
@@ -56,20 +81,39 @@ defmodule Neo4ex.BoltProtocol.EncoderTest do
     end
 
     test "handles encoding of Hello messages" do
-      user_agent_bytes = byte_size("user_agent")
-      ua_bytes = byte_size("Neo4ex/0.1.0")
-      scheme_bytes = byte_size("scheme")
-      none_bytes = byte_size("none")
-      principal_bytes = byte_size("principal")
-      credentials_bytes = byte_size("credentials")
+      bolt_version = "4.0.0"
+      # we can't match on every posible key order for generic maps (too many cases)
+      encoded = Encoder.encode(%Hello{extra: %Extra.Hello{scheme: "none"}}, bolt_version)
+      decoded = encoded |> Decoder.decode(bolt_version) |> Enum.take(1) |> hd()
 
-      # even though Logon is a struct with prefdefined fields order, we're encoding it to the map so the keys will be sent alphabetically
-      assert <<0xB1, 0x01, 0xA4, 0x8::4, ^credentials_bytes::4, "credentials", 0x80, 0x8::4,
-               ^principal_bytes::4, "principal", 0x80, 0x8::4, ^scheme_bytes::4, "scheme", 0x8::4,
-               ^none_bytes::4, "none", 0x8::4, ^user_agent_bytes::4, "user_agent", 0x8::4,
-               ^ua_bytes::4,
-               "Neo4ex/0.1.0">> =
-               Encoder.encode(%Hello{extra: %Extra.Hello{scheme: "none"}}, "4.0.0")
+      # Extra.Hello is embedded meaning it has no signature on the engine side
+      assert decoded == %Hello{
+               extra: %{
+                 "user_agent" => "Neo4ex/#{@version}",
+                 "scheme" => "none",
+                 "credentials" => nil,
+                 "principal" => nil
+               }
+             }
+    end
+
+    test "handles encoding of Hello messages for >= 5.3" do
+      bolt_version = "5.3.0"
+      # we can't match on every posible key order for generic maps (too many cases)
+      encoded = Encoder.encode(%Hello{extra: %Extra.Hello{}}, bolt_version)
+      decoded = encoded |> Decoder.decode(bolt_version) |> Enum.take(1) |> hd()
+
+      # Extra.Hello is embedded meaning it has no signature on the engine side
+      assert decoded == %Hello{
+               extra: %{
+                 "user_agent" => "Neo4ex/#{@version}",
+                 "bolt_agent" => %{
+                   "language" => "Elixir/#{System.build_info()[:version]}",
+                   "product" => "Neo4ex/#{@version}"
+                 },
+                 "routing" => %{}
+               }
+             }
     end
   end
 end

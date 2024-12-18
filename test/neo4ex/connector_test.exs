@@ -3,6 +3,8 @@ defmodule Neo4ex.ConnectorTest do
 
   import Mox
 
+  require Neo4ex.Connector
+
   alias Neo4ex.BoltProtocol.Structure.Message.Request.Run
   alias Neo4ex.BoltProtocol.Encoder
 
@@ -69,6 +71,14 @@ defmodule Neo4ex.ConnectorTest do
 
       # this one fails just before chunk ends
       assert {:error, DBConnection.ConnectionError.exception(":closed")} == Connector.read(socket)
+    end
+  end
+
+  describe "supported_versions/0" do
+    test "returns compile-time list of versions" do
+      assert Enum.map(20..0//-1, fn minor -> Version.parse!("5.#{minor}.0") end) ++
+               Enum.map(4..0//-1, fn minor -> Version.parse!("4.#{minor}.0") end) ==
+               Connector.supported_versions()
     end
   end
 end

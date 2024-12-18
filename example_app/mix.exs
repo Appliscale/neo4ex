@@ -23,7 +23,7 @@ defmodule ExampleApp.MixProject do
   defp deps do
     [
       {:neo4ex, path: "../"},
-      {:bolt_sips, git: "https://github.com/florinpatrascu/bolt_sips", branch: "master"},
+      {:boltx, "~> 0.0.6"},
       {:faker, "~> 0.17.0"},
       {:jason, "~> 1.2"},
       {:benchee, "~> 1.0"}

@@ -17,7 +17,7 @@ defmodule Neo4ex.MixProject do
       docs: docs(),
       test_coverage: [
         ignore_modules: [
-          Neo4ex.BoltProtocol.Structure,
+          ~r/^Neo4ex.BoltProtocol.Structure/,
           Neo4ex.PackStream.DecoderBuilder
         ],
         summary: [
@@ -40,14 +40,14 @@ defmodule Neo4ex.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:db_connection, "~> 2.4"},
+      {:db_connection, "~> 2.6.0"},
 
       # Tests
       {:mox, "~> 1.0", only: [:test]},
 
       # Linting
-      {:credo, "~> 1.6.7", only: [:dev]},
-      {:dialyxir, "~> 1.2.0", only: [:dev], runtime: false},
+      {:credo, "~> 1.6", only: [:dev]},
+      {:dialyxir, "~> 1.4", only: [:dev], runtime: false},
 
       # Documentation
       # Run with: `mix docs`

@@ -1,11 +1,10 @@
-version: '3.1'
-
 services:
   graph_db:
-    image: neo4j:4.4.28-community
+    image: neo4j:5.26.0-community
     environment:
         NEO4J_AUTH: 'neo4j/letmein'
         NEO4JLABS_PLUGINS: '["apoc"]'
+        NEO4J_dbms_security_auth__minimum__password__length: 6
     ports:
       - "7474:7474"
       - "7687:7687"

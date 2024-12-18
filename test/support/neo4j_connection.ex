@@ -8,8 +8,8 @@ defmodule Neo4ex.Neo4jConnection do
 
   alias Neo4ex.BoltProtocol.Encoder
 
-  def generate_message_chunk(message) do
-    encoded_message = Encoder.encode(message, "4.0.0")
+  def generate_message_chunk(message, version \\ "4.0.0") do
+    encoded_message = Encoder.encode(message, version)
     message_size = byte_size(encoded_message)
     <<message_size::16, encoded_message::binary, 0::16>>
   end
