@@ -2,6 +2,7 @@ defmodule Neo4ex.Utils do
   @moduledoc false
 
   import Neo4ex.Connector, only: [supported_versions: 0]
+  import Bitwise
 
   alias Neo4ex.BoltProtocol
 
@@ -19,42 +20,30 @@ defmodule Neo4ex.Utils do
       raise Exceptions.SizeError
     end
 
-    byte_count = byte_size_for_integer(term_size, false)
-    marker_index = if byte_count < 1, do: 0, else: ceil(byte_count)
-    marker = markers_type |> Markers.get!() |> Enum.at(marker_index)
+    bit_count = count_bits(term_size)
+    marker_index = if bit_count <= 4, do: 0, else: bit_count >>> 2
+
+    markers = Markers.get!(markers_type)
+    marker = Enum.at(markers, marker_index)
+
+    # if consecutive markers repeat it means that the values encoded should fall into the bigger limit
+    # this happens for BitStrings which have the same marker up to 255 bytes of data and we have to remove repeating markers to get proper index
+    # while other types tend to have one more marker for small data up to 16 bytes
+    marker_index = markers |> Enum.dedup() |> Enum.find_index(&(&1 == marker))
 
     # marker could be nibble or octet
-    marker_bits = bit_size_for_integer(marker)
+    marker_bits = count_bits(marker)
     # term_size can be from a nibble (if marker is a nibble) up to 4 bytes
-    term_bits = bit_size_for_term_size(marker, markers_type)
+    term_bits = bit_size_for_term_size(marker_index, markers_type)
 
     <<marker::size(marker_bits), term_size::size(term_bits)>>
   end
 
-  def byte_size_for_integer(number, round? \\ true)
-
-  def byte_size_for_integer(number, true) do
-    number |> byte_size_for_integer(false) |> ceil()
-  end
-
-  def byte_size_for_integer(number, false) do
-    number |> Integer.digits(16) |> length() |> Kernel./(2)
-  end
-
-  def bit_size_for_integer(number) do
-    number |> Integer.digits(16) |> length() |> Kernel.*(4)
-  end
-
-  def bit_size_for_term_size(marker, markers_type) do
-    # if consecutive markers repeat it means that the values encoded should fall into the bigger limit
-    # this happens for BitStrings which have the same marker up to 255 bytes of data
-    # while other types tend to have one more marker for small data up to 16 bytes
-    [first_marker | _] = markers = markers_type |> Markers.get!() |> Enum.dedup()
-    marker_index = Enum.find_index(markers, &(&1 == marker))
-    first_marker_size = bit_size_for_integer(first_marker)
+  def bit_size_for_term_size(marker_index, markers_type) do
+    [first_marker | _] = Markers.get!(markers_type) |> List.wrap()
     # sometimes first marker is 4 bits, so we count 4,8,16,32
     # otherwise marker sizes are limited to 8,16,32
-    Integer.pow(2, marker_index) * first_marker_size
+    count_bits(first_marker) <<< marker_index
   end
 
   def choose_encoder(term) do
@@ -94,4 +83,25 @@ defmodule Neo4ex.Utils do
       Version.match?(ver, requirement)
     end)
   end
+
+  def power_of_two?(x), do: (x &&& x - 1) == 0
+
+  def count_bits(x, sign? \\ false)
+  def count_bits(x, false) when x >= 0, do: count_bits_unsigned(x)
+
+  # Calculate the bit length for the absolute value, then add 1 for the sign bit
+  def count_bits(x, true) do
+    bit_length = x |> abs() |> count_bits_unsigned()
+
+    # make sure the sign is preserved in this comparison
+    if x == -1 <<< (bit_length - 1) do
+      bit_length
+    else
+      bit_length + 1
+    end
+  end
+
+  # Count bits for unsigned numbers
+  defp count_bits_unsigned(0), do: 0
+  defp count_bits_unsigned(x), do: 1 + count_bits_unsigned(x >>> 1)
 end

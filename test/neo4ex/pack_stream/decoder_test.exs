@@ -9,10 +9,26 @@ defmodule Neo4ex.PackStream.DecoderTest do
       assert {false, ""} == Decoder.decode(<<0xC2>>)
       assert {true, ""} == Decoder.decode(<<0xC3>>)
       assert {[], ""} == Decoder.decode(<<0x90>>)
+    end
+
+    test "decodes Integers properly" do
       assert {123, ""} == Decoder.decode(<<0x7B>>)
+      assert {-16, ""} == Decoder.decode(<<0xF0>>)
+      assert {-63, ""} == Decoder.decode(<<0xC8, 0xC1>>)
+      assert {193, ""} == Decoder.decode(<<0xC9, 0xC1::16>>)
+      assert {-255, ""} == Decoder.decode(<<0xC9, 0xFF, 0x1>>)
       assert {32_767, ""} == Decoder.decode(<<0xC9, 32_767::16>>)
-      assert {<<1, 2, 3, 4>>, ""} == Decoder.decode(<<0xCC, 4, 1, 2, 3, 4>>)
+      assert {-2_147_483_648, ""} == Decoder.decode(<<0xCA, -2_147_483_648::32>>)
+
       assert {2.0, ""} == Decoder.decode(<<0xC1, 0x40, 0x0::56>>)
+    end
+
+    test "decodes Strings properly" do
+      assert {"Größenmaßstäbe", ""} ==
+               Decoder.decode(
+                 <<0xD0, 0x12, 0x47, 0x72, 0xC3, 0xB6, 0xC3, 0x9F, 0x65, 0x6E, 0x6D, 0x61, 0xC3,
+                   0x9F, 0x73, 0x74, 0xC3, 0xA4, 0x62, 0x65>>
+               )
 
       # make sure longer data is properly matched
       assert {"Qui quasi facilis magnam quo! Sed qui quod sit excepturi quasi. Aut architecto occaecati nihil! Perspiciatis velit nulla eum cumque consequatur rerum sit quo. Quia illum ipsum repellendus.",
@@ -34,7 +50,25 @@ defmodule Neo4ex.PackStream.DecoderTest do
                    0x6C, 0x75, 0x6D, 0x20, 0x69, 0x70, 0x73, 0x75, 0x6D, 0x20, 0x72, 0x65, 0x70,
                    0x65, 0x6C, 0x6C, 0x65, 0x6E, 0x64, 0x75, 0x73, 0x2E>>
                )
+    end
 
+    test "decodes Binaries properly" do
+      assert {<<1, 2, 3, 4>>, ""} == Decoder.decode(<<0xCC, 4, 1, 2, 3, 4>>)
+
+      # outside of printable ASCII
+      rand = fn -> Enum.random(0..30) end
+
+      long_str = Stream.repeatedly(rand) |> Enum.take(5) |> to_string()
+      assert {long_str, ""} == Decoder.decode(<<0xCC, 5::8, long_str::binary>>)
+
+      long_str = Stream.repeatedly(rand) |> Enum.take(100) |> to_string()
+      assert {long_str, ""} == Decoder.decode(<<0xCC, 100::8, long_str::binary>>)
+
+      long_str = Stream.repeatedly(rand) |> Enum.take(512) |> to_string()
+      assert {long_str, ""} == Decoder.decode(<<0xCD, 512::16, long_str::binary>>)
+    end
+
+    test "decodes collections properly" do
       # Lists and maps work a bit different
       assert {["abba", "baba"], ""} ==
                <<0x92, 0x84, "abba", 0x84, "baba">>

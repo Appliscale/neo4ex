@@ -3,6 +3,7 @@ defmodule Neo4ex.Connector do
   Module responsible for communication with the database engine
   """
   import Kernel, except: [send: 2]
+  import Bitwise
 
   alias Neo4ex.Connector.Socket
   alias Neo4ex.Cypher
@@ -148,7 +149,7 @@ defmodule Neo4ex.Connector do
   def send_noop(%Socket{sock: sock}), do: Socket.send(sock, @noop)
 
   def send(message, %Socket{sock: sock, bolt_version: bolt_version}) do
-    max_chunk_size = Integer.pow(2, @chunk_size)
+    max_chunk_size = 1 <<< @chunk_size
 
     message
     |> Encoder.encode(bolt_version)

@@ -78,8 +78,15 @@ This repository contains small app that starts Neo4ex connection and Neo4j serve
 After running `docker-compose up` go to the web interface (`http://localhost:7474`) and execute import command:
 ```
 LOAD CSV WITH HEADERS FROM 'file:///example_data/customers-10000.csv' AS row
-CALL apoc.create.node(['Customer'], row) YIELD node
+CALL apoc.create.node(['Elixir.ExampleApp.Schema.Customer'], row) YIELD node
 RETURN node
+
+LOAD CSV WITH HEADERS FROM 'file:///example_data/organizations-10000.csv' AS row
+CALL apoc.create.node(['Elixir.ExampleApp.Schema.Organization'], row) YIELD node
+RETURN node
+
+MATCH (c:`Elixir.ExampleApp.Schema.Customer`), (o:`Elixir.ExampleApp.Schema.Organization`) WHERE c.country = o.country
+MERGE (c)-[:CUSTOMER_OF]->(o)
 ```
 After that you can start application located in `example_app` and play with the data.
 
