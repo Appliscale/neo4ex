@@ -68,7 +68,15 @@ defmodule Neo4ex.PackStream.EncoderTest do
     end
 
     test "returns valid binary representation of Binaries" do
-      rand = fn -> Enum.random(0..120) end
+      # outside of printable ASCII
+      rand = fn -> Enum.random(0..30) end
+
+      long_str = Stream.repeatedly(rand) |> Enum.take(5) |> to_string()
+      assert <<0xCC, 5::8, long_str::binary>> == Encoder.encode(long_str)
+
+      long_str = Stream.repeatedly(rand) |> Enum.take(100) |> to_string()
+      assert <<0xCC, 100::8, long_str::binary>> == Encoder.encode(long_str)
+
       long_str = Stream.repeatedly(rand) |> Enum.take(512) |> to_string()
       assert <<0xCD, 512::16, long_str::binary>> == Encoder.encode(long_str)
     end

@@ -8,38 +8,48 @@ defprotocol Neo4ex.PackStream.Encoder do
 end
 
 defimpl Neo4ex.PackStream.Encoder, for: Integer do
+  import Bitwise
+
   alias Neo4ex.Utils
   alias Neo4ex.PackStream.Markers
 
   def encode(number) do
     # get real size of number to retrieve MSB
-    byte_count = Utils.byte_size_for_integer(number)
-    bits = byte_count * 8
+    byte_count = byte_size_for_integer(number)
 
-    # we read one more bit from the beginning of number and check if it matches MSB
-    # if it doesn't then we have to add one byte to properly write number to PackStream
     # for small ints we follow the rule from documentation and when we detect it then we don't add any marker
-    pack_byte_diff =
-      case <<number::size(bits + 1)>> do
-        <<1::1, 0xF::4, _::bitstring>> when bits == 8 -> -1
-        <<0::2, _::bitstring>> when bits == 8 -> -1
-        <<msb::1, msb::1, _::bitstring>> -> 0
-        _ -> 1
+    tiny_int =
+      case <<number::size(byte_count <<< 3)>> do
+        <<0xF::4, _::4>> -> true
+        <<0::1, _::7>> -> true
+        _ -> false
       end
 
-    if pack_byte_diff < 0 do
+    if tiny_int do
       <<number>>
     else
-      marker_index =
-        byte_count
-        |> Kernel.+(pack_byte_diff)
-        |> :math.log2()
-        |> ceil()
-
+      marker_index = ceil_log2(byte_count)
       marker = @for |> Markers.get!() |> Enum.at(marker_index)
-      byte_count = Integer.pow(2, marker_index)
+      byte_count = 1 <<< marker_index
 
       <<marker, number::size(byte_count * 8)>>
+    end
+  end
+
+  defp byte_size_for_integer(0), do: 1
+
+  defp byte_size_for_integer(number) do
+    ((Utils.count_bits(number, true) - 1) >>> 3) + 1
+  end
+
+  defp ceil_log2(x) do
+    bit_length = Utils.count_bits(x)
+
+    # Check if x is already a power of 2
+    if Utils.power_of_two?(x) do
+      bit_length - 1
+    else
+      bit_length
     end
   end
 end
